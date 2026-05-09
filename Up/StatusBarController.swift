@@ -61,6 +61,11 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         showPopover(requiresInternalClose: true)
     }
 
+    func closeCompletionPopover() {
+        guard requiresInternalClose, popover.isShown else { return }
+        closePopover()
+    }
+
     private func showPopover(requiresInternalClose: Bool) {
         guard let button = statusItem.button else { return }
         self.requiresInternalClose = requiresInternalClose

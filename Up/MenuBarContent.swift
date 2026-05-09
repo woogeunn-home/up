@@ -37,11 +37,11 @@ struct MenuBarContent: View {
 
     private var completionContent: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if let headerImage {
-                Image(nsImage: headerImage)
+            if let completionImage {
+                Image(nsImage: completionImage)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: headerImageWidth, height: headerImageHeight)
+                    .frame(width: completionImageWidth, height: completionImageHeight)
                     .clipShape(RoundedRectangle(cornerRadius: headerCornerRadius, style: .continuous))
                     .overlay {
                         RoundedRectangle(cornerRadius: headerCornerRadius, style: .continuous)
@@ -108,22 +108,19 @@ struct MenuBarContent: View {
         .padding(contentPadding)
     }
 
-    private var headerImageWidth: CGFloat {
+    private var completionImageWidth: CGFloat {
         contentWidth - (contentPadding * 2)
     }
 
-    private var headerImageHeight: CGFloat {
-        guard let headerImage, headerImage.size.width > 0 else {
-            return headerImageWidth
+    private var completionImageHeight: CGFloat {
+        guard let completionImage, completionImage.size.width > 0 else {
+            return completionImageWidth
         }
-        return headerImageWidth * (headerImage.size.height / headerImage.size.width)
+        return completionImageWidth * (completionImage.size.height / completionImage.size.width)
     }
 
-    private var headerImage: NSImage? {
-        guard let url = Bundle.main.url(forResource: "PopoverHeader", withExtension: "png") else {
-            return nil
-        }
-        return NSImage(contentsOf: url)
+    private var completionImage: NSImage? {
+        monitor.completionImage()
     }
 
     private func timeString(_ seconds: TimeInterval) -> String {

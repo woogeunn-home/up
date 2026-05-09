@@ -23,5 +23,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         monitor.onStandUpAlert = { [weak controller] in
             controller?.showCompletionPopover()
         }
+        monitor.onSessionReset = { [weak controller] in
+            controller?.closeCompletionPopover()
+        }
     }
 }
