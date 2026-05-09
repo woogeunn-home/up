@@ -11,6 +11,7 @@ struct MenuBarContent: View {
 
     @EnvironmentObject private var monitor: ActivityMonitor
     @State private var showsSettings = false
+    @State private var revealsCompletionImage = false
 
     var body: some View {
         Group {
@@ -42,12 +43,27 @@ struct MenuBarContent: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: completionImageWidth, height: completionImageHeight)
+                    .mask {
+                        Rectangle()
+                            .scaleEffect(y: revealsCompletionImage ? 1 : 0, anchor: .center)
+                    }
                     .clipShape(RoundedRectangle(cornerRadius: headerCornerRadius, style: .continuous))
                     .overlay {
                         RoundedRectangle(cornerRadius: headerCornerRadius, style: .continuous)
                             .stroke(.white.opacity(0.12), lineWidth: 1)
                     }
                     .layoutPriority(1)
+                    .frame(height: revealsCompletionImage ? completionImageHeight : 0)
+                    .clipped()
+                    .onAppear {
+                        revealsCompletionImage = false
+                        withAnimation(.spring(response: 0.42, dampingFraction: 0.82)) {
+                            revealsCompletionImage = true
+                        }
+                    }
+                    .onDisappear {
+                        revealsCompletionImage = false
+                    }
             }
 
             Button {
