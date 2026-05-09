@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import QuartzCore
 import SwiftUI
 
 @MainActor
@@ -59,6 +60,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     func showCompletionPopover() {
         updateStatusItem()
         showPopover(requiresInternalClose: true)
+        animateCompletionPopoverBounce()
     }
 
     func closeCompletionPopover() {
@@ -90,6 +92,25 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         popover.performClose(nil)
         requiresInternalClose = false
         stopOutsideClickMonitoring()
+    }
+
+    private func animateCompletionPopoverBounce() {
+        guard let view = popover.contentViewController?.view else { return }
+        view.wantsLayer = true
+
+        let animation = CAKeyframeAnimation(keyPath: "transform.scale")
+        animation.values = [0.94, 1.05, 0.98, 1.0]
+        animation.keyTimes = [0, 0.42, 0.72, 1]
+        animation.duration = 0.36
+        animation.timingFunctions = [
+            CAMediaTimingFunction(name: .easeOut),
+            CAMediaTimingFunction(name: .easeInEaseOut),
+            CAMediaTimingFunction(name: .easeOut)
+        ]
+        animation.isRemovedOnCompletion = true
+
+        view.layer?.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+        view.layer?.add(animation, forKey: "completionPopoverBounce")
     }
 
     private func togglePopover() {
