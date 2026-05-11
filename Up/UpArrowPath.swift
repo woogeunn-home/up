@@ -1,7 +1,9 @@
 import CoreGraphics
 
-/// Up arrow glyph path, transcribed verbatim from the source SVG (viewBox 10×12).
-/// Coordinates are in the SVG's coordinate space; consumers scale as needed.
+/// Up arrow glyph path derived from the source SVG (viewBox 10×12).
+/// The path is stored in CG/SpriteKit-friendly Y-up coordinates (Y-axis flipped relative to
+/// the original SVG). Consumers can use it directly with `SKShapeNode` without any additional
+/// coordinate-space conversion.
 enum UpArrowPath {
     static let viewBoxWidth: CGFloat = 10
     static let viewBoxHeight: CGFloat = 12
@@ -93,6 +95,12 @@ enum UpArrowPath {
                    control2: CGPoint(x: 4.95508, y: 11.2207))
         p.closeSubpath()
 
-        return p
+        // SVG uses Y-down; SpriteKit uses Y-up. Flip around the viewBox height so the
+        // stored path is ready for use with SKShapeNode without further transformation.
+        // y' = viewBoxHeight - y  ≡  scale Y by -1, then translate Y by viewBoxHeight.
+        var flip = CGAffineTransform(scaleX: 1, y: -1)
+            .concatenating(CGAffineTransform(translationX: 0, y: viewBoxHeight))
+        let flipped = p.copy(using: &flip) ?? p
+        return flipped
     }()
 }
