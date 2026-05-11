@@ -6,12 +6,10 @@ struct MenuBarContent: View {
 
     private let contentWidth: CGFloat = Self.contentWidth
     private let contentPadding: CGFloat = 16
-    private let headerCornerRadius: CGFloat = 10
     var onClose: (() -> Void)?
 
     @EnvironmentObject private var monitor: ActivityMonitor
     @State private var showsSettings = false
-    @State private var revealsCompletionImage = false
 
     var body: some View {
         Group {
@@ -38,33 +36,7 @@ struct MenuBarContent: View {
 
     private var completionContent: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if let completionImage {
-                Image(nsImage: completionImage)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: completionImageWidth, height: completionImageHeight)
-                    .mask {
-                        Rectangle()
-                            .scaleEffect(y: revealsCompletionImage ? 1 : 0, anchor: .center)
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: headerCornerRadius, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: headerCornerRadius, style: .continuous)
-                            .stroke(.white.opacity(0.12), lineWidth: 1)
-                    }
-                    .layoutPriority(1)
-                    .frame(height: revealsCompletionImage ? completionImageHeight : 0)
-                    .clipped()
-                    .onAppear {
-                        revealsCompletionImage = false
-                        withAnimation(.spring(response: 0.42, dampingFraction: 0.82)) {
-                            revealsCompletionImage = true
-                        }
-                    }
-                    .onDisappear {
-                        revealsCompletionImage = false
-                    }
-            }
+            CompletionAnimationView()
 
             Button {
                 monitor.resetAfterCompletion()
@@ -122,21 +94,6 @@ struct MenuBarContent: View {
             .foregroundStyle(.secondary)
         }
         .padding(contentPadding)
-    }
-
-    private var completionImageWidth: CGFloat {
-        contentWidth - (contentPadding * 2)
-    }
-
-    private var completionImageHeight: CGFloat {
-        guard let completionImage, completionImage.size.width > 0 else {
-            return completionImageWidth
-        }
-        return completionImageWidth * (completionImage.size.height / completionImage.size.width)
-    }
-
-    private var completionImage: NSImage? {
-        monitor.completionImage()
     }
 
     private func timeString(_ seconds: TimeInterval) -> String {

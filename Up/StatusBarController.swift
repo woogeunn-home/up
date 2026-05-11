@@ -22,13 +22,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
 
         popover.behavior = .applicationDefined
         popover.delegate = self
-        popover.contentSize = NSSize(width: MenuBarContent.contentWidth, height: 560)
-        popover.contentViewController = NSHostingController(
-            rootView: MenuBarContent { [weak self] in
-                self?.closePopover()
-            }
-                .environmentObject(monitor)
-        )
+        popover.contentViewController = makeHostingController()
 
         if let button = statusItem.button {
             button.target = self
@@ -53,6 +47,17 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         updateStatusItem()
     }
 
+    private func makeHostingController() -> NSHostingController<some View> {
+        let controller = NSHostingController(
+            rootView: MenuBarContent { [weak self] in
+                self?.closePopover()
+            }
+            .environmentObject(monitor)
+        )
+        controller.sizingOptions = .preferredContentSize
+        return controller
+    }
+
     func showPopover() {
         showPopover(requiresInternalClose: false)
     }
@@ -71,12 +76,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     private func showPopover(requiresInternalClose: Bool) {
         guard let button = statusItem.button else { return }
         self.requiresInternalClose = requiresInternalClose
-        popover.contentViewController = NSHostingController(
-            rootView: MenuBarContent { [weak self] in
-                self?.closePopover()
-            }
-            .environmentObject(monitor)
-        )
+        popover.contentViewController = makeHostingController()
         NSApp.activate(ignoringOtherApps: true)
         updateStatusItem()
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
