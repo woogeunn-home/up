@@ -14,6 +14,7 @@
 		10000000000000000000010A /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000111 /* StatusBarController.swift */; };
 		10000000000000000000010C /* UpArrowPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000113 /* UpArrowPath.swift */; };
 		10000000000000000000010D /* ShapePalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000114 /* ShapePalette.swift */; };
+		10000000000000000000010E /* StackingScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000115 /* StackingScene.swift */; };
 		100000000000000000000106 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 10000000000000000000000B /* IOKit.framework */; };
 		100000000000000000000109 /* PopoverHeader.png in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000110 /* PopoverHeader.png */; };
 		10000000000000000000010B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000112 /* Assets.xcassets */; };
@@ -33,6 +34,7 @@
 		100000000000000000000112 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		100000000000000000000113 /* UpArrowPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpArrowPath.swift; sourceTree = "<group>"; };
 		100000000000000000000114 /* ShapePalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShapePalette.swift; sourceTree = "<group>"; };
+		100000000000000000000115 /* StackingScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StackingScene.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,6 +66,7 @@
 				100000000000000000000111 /* StatusBarController.swift */,
 				100000000000000000000113 /* UpArrowPath.swift */,
 				100000000000000000000114 /* ShapePalette.swift */,
+				100000000000000000000115 /* StackingScene.swift */,
 				100000000000000000000112 /* Assets.xcassets */,
 				100000000000000000000110 /* PopoverHeader.png */,
 				100000000000000000000005 /* Info.plist */,
@@ -179,6 +182,7 @@
 				10000000000000000000010A /* StatusBarController.swift in Sources */,
 				10000000000000000000010C /* UpArrowPath.swift in Sources */,
 				10000000000000000000010D /* ShapePalette.swift in Sources */,
+				10000000000000000000010E /* StackingScene.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
