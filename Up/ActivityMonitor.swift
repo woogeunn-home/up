@@ -8,7 +8,6 @@ final class ActivityMonitor: ObservableObject {
     static let minimumTargetSeconds: TimeInterval = 60
     static let defaultTargetSeconds: TimeInterval = 60 * 60
     static let defaultInactivityResetSeconds: TimeInterval = 5 * 60
-    static let completionImageBookmarkKey = "completionImageBookmarkData"
 
     var onStandUpAlert: (() -> Void)?
     var onSessionReset: (() -> Void)?
@@ -36,12 +35,6 @@ final class ActivityMonitor: ObservableObject {
         }
     }
 
-    @Published var completionImageBookmarkData: Data? {
-        didSet {
-            UserDefaults.standard.set(completionImageBookmarkData, forKey: Self.completionImageBookmarkKey)
-        }
-    }
-
     @Published private(set) var activeSeconds: TimeInterval = 0
     @Published private(set) var isRunning = false
     @Published private(set) var isPaused = false
@@ -60,7 +53,6 @@ final class ActivityMonitor: ObservableObject {
         targetSeconds = savedTarget > 0 ? max(savedTarget, Self.minimumTargetSeconds) : Self.defaultTargetSeconds
         let savedReset = UserDefaults.standard.double(forKey: "inactivityResetSeconds")
         inactivityResetSeconds = savedReset > 0 ? max(savedReset, 60) : Self.defaultInactivityResetSeconds
-        completionImageBookmarkData = UserDefaults.standard.data(forKey: Self.completionImageBookmarkKey)
         startTimer()
     }
 
@@ -102,44 +94,6 @@ final class ActivityMonitor: ObservableObject {
         isRunning = false
         isPaused = false
         hasAlertedForCurrentSession = false
-    }
-
-    func setCompletionImageURL(_ url: URL) throws {
-        completionImageBookmarkData = try url.bookmarkData(
-            options: .withSecurityScope,
-            includingResourceValuesForKeys: nil,
-            relativeTo: nil
-        )
-    }
-
-    func clearCompletionImage() {
-        completionImageBookmarkData = nil
-    }
-
-    func completionImage() -> NSImage? {
-        guard let completionImageBookmarkData else {
-            return bundledCompletionImage()
-        }
-
-        var isStale = false
-        do {
-            let url = try URL(
-                resolvingBookmarkData: completionImageBookmarkData,
-                options: .withSecurityScope,
-                relativeTo: nil,
-                bookmarkDataIsStale: &isStale
-            )
-            let hasAccess = url.startAccessingSecurityScopedResource()
-            defer {
-                if hasAccess {
-                    url.stopAccessingSecurityScopedResource()
-                }
-            }
-
-            return NSImage(contentsOf: url) ?? bundledCompletionImage()
-        } catch {
-            return bundledCompletionImage()
-        }
     }
 
     func togglePause() {
@@ -199,13 +153,6 @@ final class ActivityMonitor: ObservableObject {
         hasAlertedForCurrentSession = true
         NSSound(named: "Hero")?.play()
         onStandUpAlert?()
-    }
-
-    private func bundledCompletionImage() -> NSImage? {
-        guard let url = Bundle.main.url(forResource: "PopoverHeader", withExtension: "png") else {
-            return nil
-        }
-        return NSImage(contentsOf: url)
     }
 }
 

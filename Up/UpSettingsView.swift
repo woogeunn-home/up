@@ -2,7 +2,6 @@ import AppKit
 import Darwin
 import ServiceManagement
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct UpSettingsView: View {
     @EnvironmentObject private var monitor: ActivityMonitor
@@ -16,8 +15,6 @@ struct UpSettingsView: View {
     @State private var isUpdatingResetInput = false
     @State private var launchAtLogin = false
     @State private var launchAtLoginError: String?
-    @State private var completionImageName = "기본 이미지"
-    @State private var completionImageError: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -71,50 +68,6 @@ struct UpSettingsView: View {
 
             Divider()
 
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("시간 종료 이미지")
-                            .lineLimit(1)
-                        Text(completionImageName)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                    }
-
-                    Spacer()
-
-                    Button {
-                        selectCompletionImage()
-                    } label: {
-                        Label("선택", systemImage: "photo")
-                    }
-                    .controlSize(.small)
-
-                    if monitor.completionImageBookmarkData != nil {
-                        Button {
-                            clearCompletionImage()
-                        } label: {
-                            Image(systemName: "xmark")
-                                .frame(width: 18, height: 18)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(.secondary)
-                        .help("기본 이미지로 되돌리기")
-                    }
-                }
-
-                if let completionImageError {
-                    Text(completionImageError)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Divider()
-
             VStack(alignment: .leading, spacing: 4) {
                 Toggle(isOn: Binding(
                     get: { launchAtLogin },
@@ -152,7 +105,6 @@ struct UpSettingsView: View {
             selectedResetMinutes = monitor.inactivityResetSeconds / 60
             setResetInput(minuteDisplay(selectedResetMinutes))
             refreshLaunchAtLogin()
-            refreshCompletionImageName()
         }
     }
 
@@ -222,52 +174,6 @@ struct UpSettingsView: View {
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
             exit(EXIT_SUCCESS)
-        }
-    }
-
-    private func selectCompletionImage() {
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-        panel.allowedContentTypes = [.image]
-
-        guard panel.runModal() == .OK, let url = panel.url else {
-            return
-        }
-
-        do {
-            try monitor.setCompletionImageURL(url)
-            completionImageName = url.lastPathComponent
-            completionImageError = nil
-        } catch {
-            completionImageError = "이미지를 저장하지 못했습니다."
-        }
-    }
-
-    private func clearCompletionImage() {
-        monitor.clearCompletionImage()
-        completionImageName = "기본 이미지"
-        completionImageError = nil
-    }
-
-    private func refreshCompletionImageName() {
-        guard let bookmarkData = monitor.completionImageBookmarkData else {
-            completionImageName = "기본 이미지"
-            return
-        }
-
-        var isStale = false
-        do {
-            let url = try URL(
-                resolvingBookmarkData: bookmarkData,
-                options: .withSecurityScope,
-                relativeTo: nil,
-                bookmarkDataIsStale: &isStale
-            )
-            completionImageName = url.lastPathComponent
-        } catch {
-            completionImageName = "선택한 이미지"
         }
     }
 
