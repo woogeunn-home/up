@@ -1,6 +1,7 @@
 import AppKit
 import SpriteKit
 
+@MainActor
 final class StackingScene: SKScene {
     static let boxWidth: CGFloat = 248
     static let minBoxHeight: CGFloat = 80
