@@ -17,7 +17,6 @@
 		10000000000000000000010E /* StackingScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000115 /* StackingScene.swift */; };
 		10000000000000000000010F /* CompletionAnimationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000116 /* CompletionAnimationView.swift */; };
 		100000000000000000000106 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 10000000000000000000000B /* IOKit.framework */; };
-		100000000000000000000109 /* PopoverHeader.png in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000110 /* PopoverHeader.png */; };
 		10000000000000000000010B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000112 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -30,7 +29,6 @@
 		10000000000000000000000B /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
 		10000000000000000000000C /* Up.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Up.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		10000000000000000000000D /* Up.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Up.entitlements; sourceTree = "<group>"; };
-		100000000000000000000110 /* PopoverHeader.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = PopoverHeader.png; sourceTree = "<group>"; };
 		100000000000000000000111 /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
 		100000000000000000000112 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		100000000000000000000113 /* UpArrowPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpArrowPath.swift; sourceTree = "<group>"; };
@@ -71,7 +69,6 @@
 				100000000000000000000115 /* StackingScene.swift */,
 				100000000000000000000116 /* CompletionAnimationView.swift */,
 				100000000000000000000112 /* Assets.xcassets */,
-				100000000000000000000110 /* PopoverHeader.png */,
 				100000000000000000000005 /* Info.plist */,
 				10000000000000000000000D /* Up.entitlements */,
 			);
@@ -166,7 +163,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				100000000000000000000109 /* PopoverHeader.png in Resources */,
 				10000000000000000000010B /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
