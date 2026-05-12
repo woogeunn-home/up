@@ -25,7 +25,7 @@ struct CompletionAnimationView: View {
         ZStack(alignment: .bottomLeading) {
             ForEach(holder.shapes, id: \.id) { state in
                 bodyView(for: state)
-                    .scaleEffect(holder.popScale(for: state.id))
+                    .scaleEffect(CGFloat(state.scale) * holder.popScale(for: state.id))
                     .position(
                         x: CGFloat(state.x),
                         // Convert Y-up scene coord → SwiftUI top-down coord.

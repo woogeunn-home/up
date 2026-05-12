@@ -159,7 +159,11 @@ final class MatterJSWorld {
             // Sequential palette index — alternates 0, 1, 0, 1, ...
             let nextPaletteIdx = 0;
             const MAX_COUNT = 50;
-            const GROW_DURATION_MS = 500;
+            const GROW_DURATION_MS = 200;
+            // Shapes spawn directly at their resting position so the appearance
+            // reads as a pure pop-in rather than a fall. Set to a small positive
+            // value if you want a subtle drop.
+            const SPAWN_DROP_HEIGHT = 0;
 
             let dynamicBodies = [];
             let shapeCount = 0;
@@ -186,20 +190,39 @@ final class MatterJSWorld {
                 const jitter = (Math.random() - 0.5) * 2 * maxJitter;
                 const x = cx + jitter;
 
+                // Resting base: the top of whichever existing shape overlaps the
+                // new body's x range (smaller y in Matter coords = visually higher).
+                // Falls back to the floor when the column is empty, so shapes only
+                // start stacking from the tower once the ground is occupied.
+                const newMinX = x - radius;
+                const newMaxX = x + radius;
+                let baseFloor = floorY;
+                for (const b of dynamicBodies) {
+                    if (b.bounds.max.x > newMinX && b.bounds.min.x < newMaxX) {
+                        if (b.bounds.min.y < baseFloor) baseFloor = b.bounds.min.y;
+                    }
+                }
+
                 const base = {
                     restitution: 0.05,
                     friction: 0.9,
                     frictionStatic: 1.5,
                     density: 0.002,
-                    isStatic: true
+                    isStatic: false
                 };
-                const body = M.Bodies.circle(x, floorY, radius, base);
+                const body = M.Bodies.circle(x, baseFloor, radius, base);
                 const originalHeight = radius * 2;
                 M.Body.setAngle(body, (Math.random() - 0.5) * 0.3);
 
+                // Body is dynamic from the moment it spawns and keeps its full
+                // physical size — only the *visual* scale animates. Scaling the
+                // physics body during the spring overshoot caused the post-peak
+                // shrink to detach the body from the floor and drop it again,
+                // which read as a late "fall at the end of the animation".
                 const initialScale = 0.05;
-                M.Body.scale(body, initialScale, initialScale);
-                M.Body.setPosition(body, { x: x, y: floorY - (originalHeight * initialScale) / 2 });
+                const restingCenterY = baseFloor - originalHeight / 2;
+                const spawnCenterY = restingCenterY - SPAWN_DROP_HEIGHT;
+                M.Body.setPosition(body, { x: x, y: spawnCenterY });
 
                 const id = nextId++;
                 body.upId = id;
@@ -213,28 +236,28 @@ final class MatterJSWorld {
                     currentScale: initialScale,
                     originalHeight: originalHeight,
                     size: radius,
-                    spawnX: x
+                    spawnX: x,
+                    baseFloor: baseFloor
                 });
                 grows.set(id, { startTime: performance.now(), targetScale: 1.0 });
                 return id;
             }
 
             function advanceGrows(now) {
+                // Ease-out-back tuned for ~5% overshoot — soft pop. Visual-only:
+                // physical size is left untouched so post-peak settle doesn't
+                // shift the body downward.
+                // Peak overshoot = 4·c1³ / (27·(c1+1)²). c1 ≈ 1.165 → ~5%.
+                const BACK_C1 = 1.165;
+                const BACK_C3 = BACK_C1 + 1;
                 for (const [id, g] of grows.entries()) {
                     const t = Math.min((now - g.startTime) / GROW_DURATION_MS, 1);
-                    const eased = 1 - Math.pow(1 - t, 2.5);
+                    const eased = 1 + BACK_C3 * Math.pow(t - 1, 3) + BACK_C1 * Math.pow(t - 1, 2);
                     const newScale = 0.05 + (g.targetScale - 0.05) * eased;
                     const info = data.get(id);
                     if (!info) { grows.delete(id); continue; }
-                    const ratio = newScale / info.currentScale;
-                    // Find the body — Matter.js stores them in dynamicBodies array
-                    const body = dynamicBodies.find(b => b.upId === id);
-                    if (!body) { grows.delete(id); continue; }
-                    M.Body.scale(body, ratio, ratio);
-                    M.Body.setPosition(body, { x: info.spawnX, y: floorY - (info.originalHeight * newScale) / 2 });
                     info.currentScale = newScale;
                     if (t >= 1) {
-                        M.Body.setStatic(body, false);
                         grows.delete(id);
                     }
                 }
