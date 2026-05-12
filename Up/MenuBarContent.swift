@@ -35,8 +35,8 @@ struct MenuBarContent: View {
     }
 
     private var completionContent: some View {
-        // Animation fills the entire popover; the 확인 button floats above it
-        // (overlay) with its own padding. Shapes physically pile up from the
+        // Animation fills the entire popover; the 일어날게요! button floats above
+        // it (overlay) with its own padding. Shapes physically pile up from the
         // popover's bottom edge, so the bottom-most shapes show through the
         // floating glass button.
         ZStack(alignment: .bottom) {
@@ -46,7 +46,7 @@ struct MenuBarContent: View {
                 monitor.resetAfterCompletion()
                 onClose?()
             } label: {
-                Text("확인")
+                Text("일어날게요!")
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity)
@@ -55,6 +55,11 @@ struct MenuBarContent: View {
             }
             .buttonStyle(.plain)
             .modifier(GlassCapsule())
+            .overlay(
+                Capsule()
+                    .fill(Color.black.opacity(0.08))
+                    .allowsHitTesting(false)
+            )
             .shadow(color: .black.opacity(0.18), radius: 10, x: 0, y: 4)
             .padding(.horizontal, contentPadding)
             .padding(.bottom, contentPadding)
