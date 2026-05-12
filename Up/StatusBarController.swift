@@ -84,8 +84,8 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     }
 
     private func closePopover() {
-        popover.performClose(nil)
         requiresInternalClose = false
+        popover.performClose(nil)
     }
 
     private func animateCompletionPopoverBounce() {
@@ -147,6 +147,10 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         )
         button.attributedTitle = attributed
         button.imagePosition = text.isEmpty ? .imageOnly : .imageLeading
+    }
+
+    func popoverShouldClose(_ popover: NSPopover) -> Bool {
+        !requiresInternalClose
     }
 
     func popoverDidClose(_ notification: Notification) {
