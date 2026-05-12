@@ -27,3 +27,60 @@
 5. 작업 브랜치가 원격에 남아 있으면 `git push origin --delete <branch>` 로 정리
 
 이 프로젝트는 PR 없이 main 직접 푸시 워크플로우를 사용한다. 사용자가 명시적으로 "PR 만들어줘"라고 하지 않는 한 PR을 만들지 않는다.
+
+## UI 화면 용어
+
+Up 앱은 메뉴바 아이콘과 팝오버로 구성되며, 팝오버 안에서 상태에 따라 세 가지 화면이 전환된다. 코드/대화/커밋 메시지에서 일관되게 적용한다.
+
+### 1. 메뉴바 아이콘 영역 (`StatusBarController`)
+
+| 한글 | 영문 | 가리키는 것 |
+|---|---|---|
+| 메뉴바 아이콘 | Menu bar icon / Status item | macOS 메뉴바에 표시되는 아이콘 (`NSStatusItem`) |
+| 팝오버 | Popover | 아이콘 클릭 시 내려오는 컨테이너 (`NSPopover`) |
+
+### 2. 진행 중 화면 (`MenuBarContent.activeContent`)
+
+`hasExceededTarget == false`일 때의 팝오버 화면.
+
+| 한글 | 영문 | 가리키는 것 |
+|---|---|---|
+| 진행 중 화면 | Active screen | 진행 중 상태의 팝오버 화면 전체 |
+| 헤더 | Header | 상단 "Up" 타이틀 + 설정 버튼 줄 |
+| 설정 버튼 | Settings button | 헤더 우측 톱니바퀴 아이콘 (`gearshape`) |
+| 진행 바 | Progress bar | 가로 `ProgressView` |
+| 남은 시간 라벨 | Remaining-time label | 모래시계 아이콘 + 시:분:초 표시 |
+| 일시정지 버튼 | Pause button | 진행/정지 토글 버튼 (`play.fill` / `pause.fill`) |
+
+### 3. 설정 화면 (`UpSettingsView`)
+
+| 한글 | 영문 | 가리키는 것 |
+|---|---|---|
+| 설정 화면 | Settings screen | `UpSettingsView` 전체 |
+| 뒤로가기 버튼 | Back button | 좌상단 chevron 버튼 |
+| 전체 시간 스테퍼 | Target-time stepper | "전체 시간" 행 (`targetSeconds`) |
+| 일어난 시간 스테퍼 | Reset-time stepper | "일어난 시간" 행 (`inactivityResetSeconds`) |
+| 자동 실행 토글 | Launch-at-login toggle | "컴퓨터 시작시 자동 실행" 토글 |
+| 앱 종료 버튼 | Quit button | 하단 "앱 종료하기" 버튼 |
+
+### 4. 완료 팝오버 (`MenuBarContent.completionContent`)
+
+`hasExceededTarget == true`일 때의 팝오버 화면. 물리 엔진은 Matter.js (JSContext)이고 렌더링은 SwiftUI다.
+
+| 한글 | 영문 | 가리키는 것 |
+|---|---|---|
+| 완료 팝오버 | Completion popover | 완료 상태의 팝오버 화면 전체 |
+| 완료 애니메이션 | Completion animation | 상단 도형 영역 (`CompletionAnimationView`) |
+| 도형 | Shape | 씬 안에서 쌓이는 개별 단위 (Matter.js body + SwiftUI Shape) |
+| 애니메이션 컨테이너 | Animation container | 둥근 모서리로 클립되는 바깥 프레임 (`boxWidth × boxHeight`) |
+| 확인 버튼 | Confirm button | "확인" 라벨 버튼. `resetAfterCompletion()` + popover 닫힘 |
+
+### 용어 사용 규칙
+
+- "화면", "시간", "버튼"은 항상 수식어와 함께 부른다. 단독 사용 금지.
+  - 화면: 진행 중 / 완료 / 설정 — 세 화면을 prefix로 구분
+  - 시간: 전체 / 일어난 / 남은 — 세 종류가 공존
+  - 버튼: 설정 / 일시정지 / 뒤로가기 / 앱 종료 / 확인 — 다섯 종류
+- "박스"는 `boxWidth`/`boxHeight` 변수 맥락에서만 사용. 쌓이는 단위는 "도형".
+- "완료 화면"이 아니라 "완료 팝오버" — popover라는 형태가 드러나야 함.
+- "닫기 버튼" 금지 — 완료 팝오버의 확인 버튼은 reset + close 동작이라 의미가 좁아짐.
