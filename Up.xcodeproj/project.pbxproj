@@ -16,8 +16,11 @@
 		10000000000000000000010D /* ShapePalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000114 /* ShapePalette.swift */; };
 		10000000000000000000010E /* StackingScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000115 /* StackingScene.swift */; };
 		10000000000000000000010F /* CompletionAnimationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000116 /* CompletionAnimationView.swift */; };
+		100000000000000000000110 /* Physics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000117 /* Physics.swift */; };
+		10000000000000000000011A /* MatterJSWorld.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000011B /* MatterJSWorld.swift */; };
 		100000000000000000000106 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 10000000000000000000000B /* IOKit.framework */; };
 		10000000000000000000010B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000112 /* Assets.xcassets */; };
+		100000000000000000000119 /* matter.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000118 /* matter.min.js */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,6 +38,9 @@
 		100000000000000000000114 /* ShapePalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShapePalette.swift; sourceTree = "<group>"; };
 		100000000000000000000115 /* StackingScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StackingScene.swift; sourceTree = "<group>"; };
 		100000000000000000000116 /* CompletionAnimationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionAnimationView.swift; sourceTree = "<group>"; };
+		100000000000000000000117 /* Physics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Physics.swift; sourceTree = "<group>"; };
+		100000000000000000000118 /* matter.min.js */ = {isa = PBXFileReference; lastKnownFileType = text; path = matter.min.js; sourceTree = "<group>"; };
+		10000000000000000000011B /* MatterJSWorld.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatterJSWorld.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,6 +74,9 @@
 				100000000000000000000114 /* ShapePalette.swift */,
 				100000000000000000000115 /* StackingScene.swift */,
 				100000000000000000000116 /* CompletionAnimationView.swift */,
+				100000000000000000000117 /* Physics.swift */,
+				10000000000000000000011B /* MatterJSWorld.swift */,
+				100000000000000000000118 /* matter.min.js */,
 				100000000000000000000112 /* Assets.xcassets */,
 				100000000000000000000005 /* Info.plist */,
 				10000000000000000000000D /* Up.entitlements */,
@@ -164,6 +173,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				10000000000000000000010B /* Assets.xcassets in Resources */,
+				100000000000000000000119 /* matter.min.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -183,6 +193,8 @@
 				10000000000000000000010D /* ShapePalette.swift in Sources */,
 				10000000000000000000010E /* StackingScene.swift in Sources */,
 				10000000000000000000010F /* CompletionAnimationView.swift in Sources */,
+				100000000000000000000110 /* Physics.swift in Sources */,
+				10000000000000000000011A /* MatterJSWorld.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

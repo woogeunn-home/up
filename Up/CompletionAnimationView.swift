@@ -1,28 +1,208 @@
+import AppKit
 import SwiftUI
-import SpriteKit
 
+/// SwiftUI-rendered stacking animation. Physics still runs inside `MatterJSWorld`
+/// (Matter.js via JSContext); this view simply draws each tick's snapshot as
+/// SwiftUI shape views so we can apply Liquid Glass material to them.
 struct CompletionAnimationView: View {
-    @StateObject private var holder = SceneHolder()
+    @StateObject private var holder = AnimationHolder()
 
     var body: some View {
-        SpriteView(scene: holder.scene,
-                   options: [.allowsTransparency])
-            .frame(width: StackingScene.boxWidth, height: holder.boxHeight)
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .animation(.spring(response: 0.35, dampingFraction: 0.85), value: holder.boxHeight)
+        Group {
+            if #available(macOS 26.0, *) {
+                GlassEffectContainer {
+                    contentZStack
+                }
+            } else {
+                contentZStack
+            }
+        }
+        .frame(width: AnimationHolder.boxWidth, height: holder.boxHeight)
+        .clipped()
+    }
+
+    private var contentZStack: some View {
+        ZStack(alignment: .bottomLeading) {
+            ForEach(holder.shapes, id: \.id) { state in
+                bodyView(for: state)
+                    .scaleEffect(holder.popScale(for: state.id))
+                    .position(
+                        x: CGFloat(state.x),
+                        // Convert Y-up scene coord → SwiftUI top-down coord.
+                        y: holder.boxHeight - CGFloat(state.y)
+                    )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func bodyView(for state: MatterJSWorld.BodyState) -> some View {
+        let diameter = CGFloat(state.size) * 2  // size is radius for circles
+        let shape = anyShape(for: state.kind)
+        let palette = ShapePalette.colors[state.palette % ShapePalette.colors.count]
+        let tint = Color(nsColor: palette.fill)
+
+        ZStack {
+            shape
+                .fill(tint)
+                .frame(width: diameter, height: diameter)
+            UpArrowGlyph()
+                .fill(Color(nsColor: palette.icon))
+                .frame(width: 22, height: 22)
+        }
+        .rotationEffect(.radians(state.angle))
+        .onTapGesture {
+            holder.pop(id: state.id)
+        }
+    }
+
+    private func anyShape(for kind: String) -> AnyShape {
+        switch kind {
+        case "circle":    return AnyShape(Circle())
+        case "rect":      return AnyShape(Rectangle())
+        case "rounded":   return AnyShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        case "triangle":  return AnyShape(RegularPolygon(sides: 3))
+        case "pentagon":  return AnyShape(RegularPolygon(sides: 5))
+        case "hexagon":   return AnyShape(RegularPolygon(sides: 6))
+        default:          return AnyShape(Circle())
+        }
+    }
+
+}
+
+// MARK: - Polygon shape
+
+private struct RegularPolygon: Shape {
+    let sides: Int
+
+    func path(in rect: CGRect) -> Path {
+        let radius = min(rect.width, rect.height) / 2
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        var path = Path()
+        for i in 0..<sides {
+            let angle = CGFloat(i) / CGFloat(sides) * 2 * .pi - .pi / 2
+            let point = CGPoint(x: center.x + radius * cos(angle),
+                                y: center.y + radius * sin(angle))
+            if i == 0 { path.move(to: point) } else { path.addLine(to: point) }
+        }
+        path.closeSubpath()
+        return path
     }
 }
 
+// MARK: - Up arrow glyph as a SwiftUI Shape
+
+private struct UpArrowGlyph: Shape {
+    func path(in rect: CGRect) -> Path {
+        // The CGPath is in Y-up SpriteKit-style coords centered on a 10×12 viewBox.
+        // SwiftUI's coordinate space is Y-down, so we flip vertically while we
+        // scale-and-translate the path to fit `rect`.
+        let viewBoxW: CGFloat = UpArrowPath.viewBoxWidth
+        let viewBoxH: CGFloat = UpArrowPath.viewBoxHeight
+        let scale = Swift.min(rect.width / viewBoxW, rect.height / viewBoxH)
+        let dx = (rect.width - viewBoxW * scale) / 2
+        let dy = (rect.height - viewBoxH * scale) / 2
+
+        var t = CGAffineTransform(translationX: dx, y: dy + viewBoxH * scale)
+            .scaledBy(x: scale, y: -scale)
+
+        var combined = Path()
+        if let chevron = UpArrowPath.chevronPath.copy(using: &t) {
+            combined.addPath(Path(chevron))
+        }
+        if let stem = UpArrowPath.stemPath.copy(using: &t) {
+            combined.addPath(Path(stem))
+        }
+        return combined
+    }
+}
+
+// MARK: - Animation holder
+
+/// Drives the Matter.js simulation via a periodic timer and publishes state to
+/// SwiftUI. Replaces the old `SceneHolder` / `SpriteView` driver.
 @MainActor
-private final class SceneHolder: ObservableObject {
-    let scene: StackingScene
-    @Published var boxHeight: CGFloat = StackingScene.minBoxHeight
+final class AnimationHolder: ObservableObject {
+    static let boxWidth: CGFloat = 280
+    static let minBoxHeight: CGFloat = 80
+    /// Duration of the in-place pop scale-out animation.
+    static let popDuration: TimeInterval = 0.09
+
+    private let world = MatterJSWorld()
+    @Published var shapes: [MatterJSWorld.BodyState] = []
+    @Published var boxHeight: CGFloat = AnimationHolder.minBoxHeight
+
+    /// Bodies that have been popped: their last-known state (frozen position)
+    /// and the moment the pop started. The visual lingers for `popDuration`
+    /// and shrinks in place via `popScale(for:)`.
+    private var poppingStates: [Int: (state: MatterJSWorld.BodyState, startTime: TimeInterval)] = [:]
+
+    private var timer: Timer?
+    private var lastTime: TimeInterval = 0
+    private var nextSpawnTime: TimeInterval = 0
 
     init() {
-        let scene = StackingScene()
-        self.scene = scene
-        scene.onHeightChange = { [weak self] height in
-            self?.boxHeight = height
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.tick() }
         }
+    }
+
+    deinit {
+        timer?.invalidate()
+    }
+
+    private func tick() {
+        let now = CACurrentMediaTime()
+        if lastTime == 0 {
+            lastTime = now
+            nextSpawnTime = now
+        }
+        let dt = Swift.min(now - lastTime, 1.0 / 30.0)
+        lastTime = now
+
+        if now >= nextSpawnTime {
+            nextSpawnTime = now + 1.6
+            let id = world.spawn()
+            if id > 0 {
+                NSSound(named: "Tink")?.play()
+            }
+        }
+
+        world.step(dt: dt)
+
+        let snapshot = world.snapshot()
+        let snapshotIds = Set(snapshot.map { $0.id })
+
+        // Drop popping entries whose animation window has elapsed.
+        poppingStates = poppingStates.filter { _, value in
+            now - value.startTime < Self.popDuration
+        }
+
+        // Render-list = live snapshot ∪ frozen popping shapes that aren't
+        // already in the snapshot.
+        var combined = snapshot
+        for (id, popping) in poppingStates where !snapshotIds.contains(id) {
+            combined.append(popping.state)
+        }
+
+        shapes = combined
+        boxHeight = CGFloat(world.updateBoxHeight())
+    }
+
+    func pop(id: Int) {
+        if let state = shapes.first(where: { $0.id == id }) {
+            poppingStates[id] = (state, CACurrentMediaTime())
+        }
+        world.remove(id: id)
+        NSSound(named: "Pop")?.play()
+    }
+
+    /// Scale factor for a body during its pop animation. 1.0 for normal bodies;
+    /// 1.0 → 0.0 over `popDuration` for popping ones.
+    func popScale(for id: Int) -> CGFloat {
+        guard let popping = poppingStates[id] else { return 1.0 }
+        let elapsed = CACurrentMediaTime() - popping.startTime
+        let t = Swift.min(elapsed / Self.popDuration, 1.0)
+        return CGFloat(1.0 - t)
     }
 }

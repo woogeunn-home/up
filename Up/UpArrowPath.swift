@@ -1,17 +1,19 @@
 import CoreGraphics
 
 /// Up arrow glyph path derived from the source SVG (viewBox 10×12).
-/// The path is stored in CG/SpriteKit-friendly Y-up coordinates (Y-axis flipped relative to
-/// the original SVG). Consumers can use it directly with `SKShapeNode` without any additional
-/// coordinate-space conversion.
+/// Stored in CG/SpriteKit-friendly Y-up coordinates (Y-axis flipped relative to
+/// the original SVG). The two subpaths (chevron, stem) are exposed separately so
+/// consumers can render them as independent shape nodes — combining them into one
+/// CGPath produces a render artifact at the chevron/stem overlap.
 enum UpArrowPath {
     static let viewBoxWidth: CGFloat = 10
     static let viewBoxHeight: CGFloat = 12
 
-    static let path: CGPath = {
-        let p = CGMutablePath()
+    static let chevronPath: CGPath = flipY(makeChevron())
+    static let stemPath: CGPath = flipY(makeStem())
 
-        // Subpath 1: outer chevron + base
+    private static func makeChevron() -> CGMutablePath {
+        let p = CGMutablePath()
         p.move(to: CGPoint(x: 0.808594, y: 5.50195))
         p.addCurve(to: CGPoint(x: 0.228516, y: 5.27344),
                    control1: CGPoint(x: 0.578125, y: 5.50195),
@@ -62,8 +64,11 @@ enum UpArrowPath {
                    control1: CGPoint(x: 1.04492, y: 5.47852),
                    control2: CGPoint(x: 0.933594, y: 5.50195))
         p.closeSubpath()
+        return p
+    }
 
-        // Subpath 2: vertical stem
+    private static func makeStem() -> CGMutablePath {
+        let p = CGMutablePath()
         p.move(to: CGPoint(x: 4.70508, y: 11.2207))
         p.addCurve(to: CGPoint(x: 4.08984, y: 10.9746),
                    control1: CGPoint(x: 4.45117, y: 11.2207),
@@ -94,13 +99,13 @@ enum UpArrowPath {
                    control1: CGPoint(x: 5.1582, y: 11.1387),
                    control2: CGPoint(x: 4.95508, y: 11.2207))
         p.closeSubpath()
+        return p
+    }
 
-        // SVG uses Y-down; SpriteKit uses Y-up. Flip around the viewBox height so the
-        // stored path is ready for use with SKShapeNode without further transformation.
-        // y' = viewBoxHeight - y  ≡  scale Y by -1, then translate Y by viewBoxHeight.
+    /// SVG uses Y-down; SpriteKit uses Y-up. Flip around the viewBox height.
+    private static func flipY(_ source: CGMutablePath) -> CGPath {
         var flip = CGAffineTransform(scaleX: 1, y: -1)
             .concatenating(CGAffineTransform(translationX: 0, y: viewBoxHeight))
-        let flipped = p.copy(using: &flip) ?? p
-        return flipped
-    }()
+        return source.copy(using: &flip) ?? source
+    }
 }

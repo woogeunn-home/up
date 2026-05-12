@@ -11,8 +11,6 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     private var cancellables: Set<AnyCancellable> = []
     private var blinkPhase = false
     private var blinkTimer: Timer?
-    private var localEventMonitor: Any?
-    private var globalEventMonitor: Any?
     private var requiresInternalClose = false
 
     init(monitor: ActivityMonitor) {
@@ -20,7 +18,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         super.init()
 
-        popover.behavior = .applicationDefined
+        popover.behavior = .transient   // standard menu-bar dismissal behavior
         popover.delegate = self
         popover.contentViewController = makeHostingController()
 
@@ -76,22 +74,18 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     private func showPopover(requiresInternalClose: Bool) {
         guard let button = statusItem.button else { return }
         self.requiresInternalClose = requiresInternalClose
+        // Completion popover must stay open until the user taps 확인, so use
+        // .applicationDefined for that case; everything else uses the standard
+        // .transient (auto-closes on outside click).
+        popover.behavior = requiresInternalClose ? .applicationDefined : .transient
         popover.contentViewController = makeHostingController()
-        NSApp.activate(ignoringOtherApps: true)
         updateStatusItem()
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-        popover.contentViewController?.view.window?.makeKey()
-        if requiresInternalClose {
-            stopOutsideClickMonitoring()
-        } else {
-            startOutsideClickMonitoring()
-        }
     }
 
     private func closePopover() {
         popover.performClose(nil)
         requiresInternalClose = false
-        stopOutsideClickMonitoring()
     }
 
     private func animateCompletionPopoverBounce() {
@@ -156,40 +150,6 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     }
 
     func popoverDidClose(_ notification: Notification) {
-        stopOutsideClickMonitoring()
-    }
-
-    private func startOutsideClickMonitoring() {
-        stopOutsideClickMonitoring()
-
-        localEventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]) { [weak self] event in
-            guard let self else { return event }
-            let popoverWindow = self.popover.contentViewController?.view.window
-            let statusWindow = self.statusItem.button?.window
-
-            if event.window !== popoverWindow, event.window !== statusWindow {
-                self.closePopover()
-            }
-
-            return event
-        }
-
-        globalEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]) { [weak self] _ in
-            Task { @MainActor in
-                self?.closePopover()
-            }
-        }
-    }
-
-    private func stopOutsideClickMonitoring() {
-        if let localEventMonitor {
-            NSEvent.removeMonitor(localEventMonitor)
-            self.localEventMonitor = nil
-        }
-
-        if let globalEventMonitor {
-            NSEvent.removeMonitor(globalEventMonitor)
-            self.globalEventMonitor = nil
-        }
+        requiresInternalClose = false
     }
 }

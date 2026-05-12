@@ -14,4 +14,4 @@ xcuserdata/
 Packages/
 
 # Local tool settings
-.claude/settings.local.json
+.claude/

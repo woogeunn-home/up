@@ -29,14 +29,10 @@ enum ShapePalette {
         ShapeDefinition(kind: .polygon(sides: 6, circumradius: 22),    originalHeight: 44, visualWidth: 44)
     ]
 
+    /// Two-tone palette: black and white. Spawned alternately.
     static let colors: [ShapeColor] = [
-        ShapeColor(fill: rgb(0xF4, 0xA2, 0x61), icon: rgb(0x1A, 0x1A, 0x1A)),
-        ShapeColor(fill: rgb(0xE7, 0x6F, 0x51), icon: .white),
-        ShapeColor(fill: rgb(0x2A, 0x9D, 0x8F), icon: .white),
-        ShapeColor(fill: rgb(0xE9, 0xC4, 0x6A), icon: rgb(0x1A, 0x1A, 0x1A)),
-        ShapeColor(fill: rgb(0x26, 0x46, 0x53), icon: .white),
-        ShapeColor(fill: rgb(0xF2, 0x6A, 0x8D), icon: .white),
-        ShapeColor(fill: rgb(0x8E, 0x7D, 0xBE), icon: .white)
+        ShapeColor(fill: .black, icon: .white),
+        ShapeColor(fill: .white, icon: .black)
     ]
 
     private static func rgb(_ r: UInt8, _ g: UInt8, _ b: UInt8) -> NSColor {

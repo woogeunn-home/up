@@ -35,7 +35,11 @@ struct MenuBarContent: View {
     }
 
     private var completionContent: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        // Animation fills the entire popover; the 확인 button floats above it
+        // (overlay) with its own padding. Shapes physically pile up from the
+        // popover's bottom edge, so the bottom-most shapes show through the
+        // floating glass button.
+        ZStack(alignment: .bottom) {
             CompletionAnimationView()
 
             Button {
@@ -43,16 +47,18 @@ struct MenuBarContent: View {
                 onClose?()
             } label: {
                 Text("확인")
-                    .font(.callout.weight(.medium))
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 30)
-                    .contentShape(Rectangle())
+                    .frame(height: 40)
+                    .contentShape(Capsule())
             }
             .buttonStyle(.plain)
-            .foregroundStyle(.primary)
-            .background(.quaternary, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .modifier(GlassCapsule())
+            .shadow(color: .black.opacity(0.18), radius: 10, x: 0, y: 4)
+            .padding(.horizontal, contentPadding)
+            .padding(.bottom, contentPadding)
         }
-        .padding(contentPadding)
     }
 
     private var activeContent: some View {
@@ -106,5 +112,20 @@ struct MenuBarContent: View {
             return String(format: "%d:%02d:%02d", hours, minutes, seconds)
         }
         return String(format: "%02d:%02d", minutes, seconds)
+    }
+}
+
+// MARK: - Glass capsule modifier
+
+/// Applies the macOS 26 Liquid Glass material clipped to a Capsule. On older
+/// systems, falls back to a regularMaterial-filled capsule.
+private struct GlassCapsule: ViewModifier {
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(macOS 26.0, *) {
+            content.glassEffect(.regular.interactive(), in: Capsule())
+        } else {
+            content.background(.regularMaterial, in: Capsule())
+        }
     }
 }
