@@ -32,6 +32,15 @@ struct UpSettingsView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+
+                Spacer()
+
+                Image(systemName: "info.circle")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24, height: 24)
+                    .contentShape(Rectangle())
+                    .help("Made by w")
             }
 
             HStack(spacing: 16) {
