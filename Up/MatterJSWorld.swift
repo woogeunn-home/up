@@ -163,6 +163,10 @@ final class MatterJSWorld {
             // Distance above the popover's visible top edge at which new shapes
             // appear. They drop into view under gravity.
             const SPAWN_OFFSET_ABOVE_TOP = 40;
+            // Initial downward speed given to a newly spawned shape (Matter.js
+            // velocity units = pixels per ~16.67ms step). Gives the fall some
+            // weight from the first frame instead of starting from rest.
+            const SPAWN_INITIAL_VELOCITY_Y = 6;
 
             let dynamicBodies = [];
             let shapeCount = 0;
@@ -223,6 +227,7 @@ final class MatterJSWorld {
                 };
                 const body = M.Bodies.circle(x, spawnY, radius, base);
                 M.Body.setAngle(body, (Math.random() - 0.5) * 0.3);
+                M.Body.setVelocity(body, { x: 0, y: SPAWN_INITIAL_VELOCITY_Y });
 
                 const id = nextId++;
                 body.upId = id;
