@@ -91,7 +91,7 @@ final class StackingScene: SKScene {
         // The JS side refuses spawns when its on-screen count already equals
         // maxShapes, so we just call and let it decide. A pop creates a slot
         // that the next tick automatically refills.
-        let id = world.spawn()
+        let id = world.spawn(boxHeight: world.currentBoxHeight)
         guard id > 0 else { return }
         NSSound(named: "Tink")?.play()
         // The visual node is created lazily on the first snapshot that includes
@@ -120,7 +120,6 @@ final class StackingScene: SKScene {
             seenIds.insert(state.id)
             let node = visuals[state.id] ?? makeNode(for: state)
             visuals[state.id] = node
-            node.setScale(CGFloat(state.scale))
             node.position = CGPoint(x: state.x, y: state.y)
             node.zRotation = CGFloat(state.angle)
             if node.parent == nil { addChild(node) }

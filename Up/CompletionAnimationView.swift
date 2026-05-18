@@ -25,7 +25,7 @@ struct CompletionAnimationView: View {
         ZStack(alignment: .bottomLeading) {
             ForEach(holder.shapes, id: \.id) { state in
                 bodyView(for: state)
-                    .scaleEffect(CGFloat(state.scale) * holder.popScale(for: state.id))
+                    .scaleEffect(holder.popScale(for: state.id))
                     .position(
                         x: CGFloat(state.x),
                         // Convert Y-up scene coord → SwiftUI top-down coord.
@@ -162,7 +162,7 @@ final class AnimationHolder: ObservableObject {
 
         if now >= nextSpawnTime {
             nextSpawnTime = now + 1.6
-            let id = world.spawn()
+            let id = world.spawn(boxHeight: world.currentBoxHeight)
             if id > 0 {
                 NSSound(named: "Tink")?.play()
             }

@@ -14,7 +14,6 @@ final class MatterJSWorld {
         let x: Double
         let y: Double
         let angle: Double
-        let scale: Double
     }
 
     let boxWidth: Double
@@ -75,9 +74,11 @@ final class MatterJSWorld {
     }
 
     /// Spawn a new shape. Returns the JS-side body id (unique per shape).
+    /// `boxHeight` is the current popover visible height in pixels — shapes
+    /// spawn just above that, outside the visible area, and fall in.
     @discardableResult
-    func spawn() -> Int {
-        let result = context.evaluateScript("UpScene.spawn()")
+    func spawn(boxHeight: Double) -> Int {
+        let result = context.evaluateScript("UpScene.spawn(\(boxHeight))")
         return Int(result?.toInt32() ?? -1)
     }
 
@@ -103,10 +104,9 @@ final class MatterJSWorld {
                   let size = dict["size"] as? Double,
                   let x = dict["x"] as? Double,
                   let y = dict["y"] as? Double,
-                  let angle = dict["angle"] as? Double,
-                  let scale = dict["scale"] as? Double else { return nil }
+                  let angle = dict["angle"] as? Double else { return nil }
             return BodyState(id: id, kind: kind, palette: palette, size: size,
-                             x: x, y: y, angle: angle, scale: scale)
+                             x: x, y: y, angle: angle)
         }
     }
 
@@ -145,6 +145,7 @@ final class MatterJSWorld {
 
             const ground = M.Bodies.rectangle(cx, floorY + wallThickness / 2,
                                               containerWidth, wallThickness, { isStatic: true });
+            ground.isGround = true;
             const leftWall = M.Bodies.rectangle(-wallThickness / 2, floorY / 2,
                                                 wallThickness, floorY * 4, { isStatic: true });
             const rightWall = M.Bodies.rectangle(containerWidth + wallThickness / 2, floorY / 2,
@@ -159,21 +160,39 @@ final class MatterJSWorld {
             // Sequential palette index — alternates 0, 1, 0, 1, ...
             let nextPaletteIdx = 0;
             const MAX_COUNT = 50;
-            const GROW_DURATION_MS = 200;
-            // Shapes spawn directly at their resting position so the appearance
-            // reads as a pure pop-in rather than a fall. Set to a small positive
-            // value if you want a subtle drop.
-            const SPAWN_DROP_HEIGHT = 0;
+            // Distance above the popover's visible top edge at which new shapes
+            // appear. They drop into view under gravity.
+            const SPAWN_OFFSET_ABOVE_TOP = 40;
 
             let dynamicBodies = [];
             let shapeCount = 0;
             let nextId = 1;
-            // Active grow animations keyed by body id.
-            const grows = new Map();
-            // Per-body bookkeeping (kind, palette index, currentScale, targetHeight).
+            // Per-body bookkeeping (kind, palette index, size).
             const data = new Map();
+            // Body ids that have touched the ground or another landed body.
+            // Falling shapes (still in flight from above the popover) are
+            // excluded from tower-height calculations until they land — that
+            // way the popover only grows to fit the actually-settled stack.
+            const landed = new Set();
 
-            function spawn() {
+            M.Events.on(engine, 'collisionActive', function(event) {
+                for (const pair of event.pairs) {
+                    const a = pair.bodyA;
+                    const b = pair.bodyB;
+                    if (!a.isStatic && a.upId !== undefined) {
+                        if (b.isGround || (b.upId !== undefined && landed.has(b.upId))) {
+                            landed.add(a.upId);
+                        }
+                    }
+                    if (!b.isStatic && b.upId !== undefined) {
+                        if (a.isGround || (a.upId !== undefined && landed.has(a.upId))) {
+                            landed.add(b.upId);
+                        }
+                    }
+                }
+            });
+
+            function spawn(boxHeight) {
                 // Spawn until the on-screen count reaches MAX_COUNT. When a shape
                 // is popped (removeBody), the next timed tick refills the slot.
                 if (dynamicBodies.length >= MAX_COUNT) return -1;
@@ -190,18 +209,10 @@ final class MatterJSWorld {
                 const jitter = (Math.random() - 0.5) * 2 * maxJitter;
                 const x = cx + jitter;
 
-                // Resting base: the top of whichever existing shape overlaps the
-                // new body's x range (smaller y in Matter coords = visually higher).
-                // Falls back to the floor when the column is empty, so shapes only
-                // start stacking from the tower once the ground is occupied.
-                const newMinX = x - radius;
-                const newMaxX = x + radius;
-                let baseFloor = floorY;
-                for (const b of dynamicBodies) {
-                    if (b.bounds.max.x > newMinX && b.bounds.min.x < newMaxX) {
-                        if (b.bounds.min.y < baseFloor) baseFloor = b.bounds.min.y;
-                    }
-                }
+                // Spawn position is just above the popover's visible top edge so
+                // the shape originates outside the popover and falls in.
+                // Visible top in Matter coords = floorY - boxHeight.
+                const spawnY = floorY - boxHeight - radius - SPAWN_OFFSET_ABOVE_TOP;
 
                 const base = {
                     restitution: 0.05,
@@ -210,19 +221,8 @@ final class MatterJSWorld {
                     density: 0.002,
                     isStatic: false
                 };
-                const body = M.Bodies.circle(x, baseFloor, radius, base);
-                const originalHeight = radius * 2;
+                const body = M.Bodies.circle(x, spawnY, radius, base);
                 M.Body.setAngle(body, (Math.random() - 0.5) * 0.3);
-
-                // Body is dynamic from the moment it spawns and keeps its full
-                // physical size — only the *visual* scale animates. Scaling the
-                // physics body during the spring overshoot caused the post-peak
-                // shrink to detach the body from the floor and drop it again,
-                // which read as a late "fall at the end of the animation".
-                const initialScale = 0.05;
-                const restingCenterY = baseFloor - originalHeight / 2;
-                const spawnCenterY = restingCenterY - SPAWN_DROP_HEIGHT;
-                M.Body.setPosition(body, { x: x, y: spawnCenterY });
 
                 const id = nextId++;
                 body.upId = id;
@@ -233,48 +233,25 @@ final class MatterJSWorld {
                 data.set(id, {
                     kind: 'circle',
                     palette: paletteIdx,
-                    currentScale: initialScale,
-                    originalHeight: originalHeight,
-                    size: radius,
-                    spawnX: x,
-                    baseFloor: baseFloor
+                    size: radius
                 });
-                grows.set(id, { startTime: performance.now(), targetScale: 1.0 });
                 return id;
             }
 
-            function advanceGrows(now) {
-                // Ease-out-back tuned for ~5% overshoot — soft pop. Visual-only:
-                // physical size is left untouched so post-peak settle doesn't
-                // shift the body downward.
-                // Peak overshoot = 4·c1³ / (27·(c1+1)²). c1 ≈ 1.165 → ~5%.
-                const BACK_C1 = 1.165;
-                const BACK_C3 = BACK_C1 + 1;
-                for (const [id, g] of grows.entries()) {
-                    const t = Math.min((now - g.startTime) / GROW_DURATION_MS, 1);
-                    const eased = 1 + BACK_C3 * Math.pow(t - 1, 3) + BACK_C1 * Math.pow(t - 1, 2);
-                    const newScale = 0.05 + (g.targetScale - 0.05) * eased;
-                    const info = data.get(id);
-                    if (!info) { grows.delete(id); continue; }
-                    info.currentScale = newScale;
-                    if (t >= 1) {
-                        grows.delete(id);
-                    }
-                }
-            }
-
-            // Engine step: advance grow animations, then engine.update.
             // Matter.js engine ticks at fixed delta (16.667ms by default for setInterval-driven
             // pages); we feed it our actual frame delta so motion is correct.
             function tick(dtMs) {
-                advanceGrows(performance.now());
                 M.Engine.update(engine, dtMs);
             }
 
-            // Tower top is the topmost (smallest y in Matter coords) bound.min.y of any body.
+            // Tower top is the topmost (smallest y in Matter coords) bound.min.y
+            // among bodies that have landed. Shapes still falling from above the
+            // popover are excluded so they don't inflate the popover height
+            // before they actually settle.
             function towerTop() {
                 let minY = floorY;
                 for (const b of dynamicBodies) {
+                    if (!landed.has(b.upId)) continue;
                     if (b.bounds.min.y < minY) minY = b.bounds.min.y;
                 }
                 // Match the visual FLOOR_OFFSET applied in snapshot().
@@ -299,8 +276,7 @@ final class MatterJSWorld {
                         size: info.size,
                         x: b.position.x,
                         y: floorY - b.position.y + FLOOR_OFFSET,  // Y-down → Y-up, lifted
-                        angle: -b.angle,                          // Y flip → flip rotation sign
-                        scale: info.currentScale
+                        angle: -b.angle                           // Y flip → flip rotation sign
                     });
                 }
                 return out;
@@ -312,7 +288,7 @@ final class MatterJSWorld {
                 M.Composite.remove(engine.world, body);
                 dynamicBodies = dynamicBodies.filter(b => b.upId !== id);
                 data.delete(id);
-                grows.delete(id);
+                landed.delete(id);
                 return true;
             }
 
