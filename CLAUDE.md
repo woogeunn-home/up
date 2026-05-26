@@ -13,6 +13,7 @@
    - 빌드 경로: `~/Library/Developer/Xcode/DerivedData/Up-*/Build/Products/Debug/Up.app`
    - `rm -rf /Applications/Up.app && cp -R <빌드경로> /Applications/Up.app`
 4. 재실행: `open /Applications/Up.app`
+5. 이어서 아래 "푸시" 워크플로우를 그대로 실행해 origin/main 까지 반영한다. 커밋되지 않은 변경이 없으면 푸시 단계는 건너뛴다.
 
 빌드 실패 시 그 자리에서 멈추고 사용자에게 알린다. 교체 단계는 실행 중인 앱을 덮어쓰는 작업이므로, 빌드 성공이 확인된 뒤에만 진행한다.
 
