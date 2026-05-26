@@ -71,22 +71,22 @@ final class ActivityMonitor: ObservableObject {
 
     func menuBarSystemImage(blinkPhase: Bool) -> String {
         if hasExceededTarget {
-            return blinkPhase ? "chevron.up.circle.fill" : "arrow.up.circle.fill"
+            return blinkPhase ? "chair.fill" : "chair"
         }
 
         if !isRunning && activeSeconds == 0 {
-            return "arrow.up.circle.dotted"
+            return "chair"
         }
 
         if isRunning && isUserActive {
-            return "pointer.arrow.click.2"
+            return "chair.fill"
         }
 
         if !isUserActive {
-            return "pointer.arrow.click.badge.clock"
+            return "chair"
         }
 
-        return "arrow.up.circle.dotted"
+        return "chair"
     }
 
     func resetAfterCompletion() {
