@@ -10,8 +10,12 @@
    ```
 2. 실행 중인 Up 앱 종료: `osascript -e 'tell application "Up" to quit'`
 3. `/Applications/Up.app`을 빌드 산출물로 교체:
-   - 빌드 경로: `~/Library/Developer/Xcode/DerivedData/Up-*/Build/Products/Debug/Up.app`
-   - `rm -rf /Applications/Up.app && cp -R <빌드경로> /Applications/Up.app`
+   - 빌드 경로는 `Up-*` 글롭으로 추측하지 말 것. worktree마다 별도 DerivedData 폴더가 생겨 글롭이 오래된 빌드를 집어 "예전 형상" 앱이 배포되는 사고가 난다. 반드시 `xcodebuild`가 알려주는 현재 체크아웃의 정확한 경로를 쓴다:
+     ```
+     APP_DIR="$(xcodebuild -project Up.xcodeproj -scheme Up -configuration Debug \
+       -showBuildSettings 2>/dev/null | awk -F' = ' '/ BUILT_PRODUCTS_DIR =/{print $2; exit}')"
+     rm -rf /Applications/Up.app && cp -R "$APP_DIR/Up.app" /Applications/Up.app
+     ```
 4. 재실행: `open /Applications/Up.app`
 5. 이어서 아래 "푸시" 워크플로우를 그대로 실행해 origin/main 까지 반영한다. 커밋되지 않은 변경이 없으면 푸시 단계는 건너뛴다.
 
