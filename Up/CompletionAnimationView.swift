@@ -6,6 +6,7 @@ import SwiftUI
 /// SwiftUI shape views so we can apply Liquid Glass material to them.
 struct CompletionAnimationView: View {
     @StateObject private var holder = AnimationHolder()
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         Group {
@@ -39,15 +40,17 @@ struct CompletionAnimationView: View {
     private func bodyView(for state: MatterJSWorld.BodyState) -> some View {
         let diameter = CGFloat(state.size) * 2  // size is radius for circles
         let shape = anyShape(for: state.kind)
-        let palette = ShapePalette.colors[state.palette % ShapePalette.colors.count]
-        let tint = Color(nsColor: palette.fill)
+        // Uniform fill keyed off appearance: black shapes in dark mode,
+        // white shapes in light mode. Icon takes the contrasting color.
+        let fill: Color = colorScheme == .dark ? .black : .white
+        let icon: Color = colorScheme == .dark ? .white : .black
 
         ZStack {
             shape
-                .fill(tint)
+                .fill(fill)
                 .frame(width: diameter, height: diameter)
             UpArrowGlyph()
-                .fill(Color(nsColor: palette.icon))
+                .fill(icon)
                 .frame(width: 22, height: 22)
         }
         .rotationEffect(.radians(state.angle))
