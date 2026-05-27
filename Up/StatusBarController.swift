@@ -136,7 +136,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         if monitor.hasExceededTarget {
             text = "Up!"
         } else if monitor.isRunning {
-            text = " \(Int(ceil(monitor.remainingSeconds / 60)))분 작업 중"
+            text = " \(Int(ceil(monitor.remainingSeconds / 60)))분 후 휴식"
         } else {
             text = ""
         }
