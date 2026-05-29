@@ -38,6 +38,19 @@ struct CompletionAnimationView: View {
 
     @ViewBuilder
     private func bodyView(for state: MatterJSWorld.BodyState) -> some View {
+        if state.kind == "image" {
+            // The completion image: `size` is the full square side length.
+            Image("CompletionDrop")
+                .resizable()
+                .frame(width: CGFloat(state.size), height: CGFloat(state.size))
+                .rotationEffect(.radians(state.angle))
+        } else {
+            circleBody(for: state)
+        }
+    }
+
+    @ViewBuilder
+    private func circleBody(for state: MatterJSWorld.BodyState) -> some View {
         let diameter = CGFloat(state.size) * 2  // size is radius for circles
         let shape = anyShape(for: state.kind)
         // Uniform fill keyed off appearance: black shapes in dark mode,
@@ -130,8 +143,12 @@ final class AnimationHolder: ObservableObject {
     static let minBoxHeight: CGFloat = 80
     /// Duration of the in-place pop scale-out animation.
     static let popDuration: TimeInterval = 0.09
+    /// Square side length of the completion image body, in points.
+    static let imageSide: CGFloat = 200
 
     private let world = MatterJSWorld()
+    /// Guards the one-shot image drop so it fires exactly once.
+    private var imageDropped = false
     @Published var shapes: [MatterJSWorld.BodyState] = []
     @Published var boxHeight: CGFloat = AnimationHolder.minBoxHeight
 
@@ -169,6 +186,13 @@ final class AnimationHolder: ObservableObject {
             if id > 0 {
                 NSSound(named: "Tink")?.play()
             }
+        }
+
+        // Once the full stack has settled, drop the completion image once.
+        if !imageDropped && world.allShapesLanded {
+            world.dropImage(boxHeight: world.currentBoxHeight, side: Double(Self.imageSide))
+            imageDropped = true
+            NSSound(named: "Glass")?.play()
         }
 
         world.step(dt: dt)
