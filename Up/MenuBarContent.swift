@@ -123,7 +123,7 @@ private struct GlassCapsule: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         if #available(macOS 26.0, *) {
-            content.glassEffect(.regular.interactive(), in: Capsule())
+            content.glassEffect(.clear.interactive(), in: Capsule())
         } else {
             content.background(.regularMaterial, in: Capsule())
         }
