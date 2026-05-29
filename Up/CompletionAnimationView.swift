@@ -44,11 +44,15 @@ struct CompletionAnimationView: View {
     private func circleBody(for state: MatterJSWorld.BodyState) -> some View {
         let diameter = CGFloat(state.size) * 2  // size is radius for circles
 
-        Image(nsImage: NSApp.applicationIconImage)
-            .resizable()
-            .aspectRatio(contentMode: .fill)
-            .frame(width: diameter, height: diameter)
-            .clipShape(Circle())
+        ZStack {
+            Circle()
+                .frame(width: diameter, height: diameter)
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: diameter, height: diameter)
+                .clipShape(Circle())
+        }
         .rotationEffect(.radians(state.angle))
         .onTapGesture {
             holder.pop(id: state.id)
