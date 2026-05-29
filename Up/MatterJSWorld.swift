@@ -86,22 +86,6 @@ final class MatterJSWorld {
         Int(context.evaluateScript("UpScene.shapeCount()")?.toInt32() ?? 0)
     }
 
-    /// True once the stack is full (MAX_COUNT shapes spawned) and every one of
-    /// them has settled onto the ground or another landed shape.
-    var allShapesLanded: Bool {
-        context.evaluateScript("UpScene.allLanded()")?.toBool() ?? false
-    }
-
-    /// Drop the completion image as a square physics body from above the
-    /// popover. It falls onto the settled stack and tumbles to rest. No-op (and
-    /// returns -1) if it was already dropped. `side` is the square side length
-    /// in points.
-    @discardableResult
-    func dropImage(boxHeight: Double, side: Double) -> Int {
-        let result = context.evaluateScript("UpScene.dropImage(\(boxHeight), \(side))")
-        return Int(result?.toInt32() ?? -1)
-    }
-
     /// Remove a body from the simulation. Subsequent snapshots will not include it.
     @discardableResult
     func remove(id: Int) -> Bool {
@@ -195,12 +179,6 @@ final class MatterJSWorld {
             // way the popover only grows to fit the actually-settled stack.
             const landed = new Set();
 
-            // The completion image, dropped once the full stack has settled.
-            // Kept separate from `dynamicBodies` so it doesn't count toward
-            // MAX_COUNT, but it still lives in the physics world and shows up in
-            // snapshots / tower-height once it lands.
-            let imageBody = null;
-
             M.Events.on(engine, 'collisionActive', function(event) {
                 for (const pair of event.pairs) {
                     const a = pair.bodyA;
@@ -265,38 +243,6 @@ final class MatterJSWorld {
                 return id;
             }
 
-            // True once the stack is full and every shape has settled. The
-            // image drop is gated on this.
-            function allLanded() {
-                if (dynamicBodies.length < MAX_COUNT) return false;
-                for (const b of dynamicBodies) {
-                    if (!landed.has(b.upId)) return false;
-                }
-                return true;
-            }
-
-            // Drop the completion image: a square body that falls from above the
-            // popover onto the settled stack. `side` is the square side length.
-            function dropImage(boxHeight, side) {
-                if (imageBody) return -1;
-                const x = cx;
-                const spawnY = floorY - boxHeight - side / 2 - SPAWN_OFFSET_ABOVE_TOP;
-                const body = M.Bodies.rectangle(x, spawnY, side, side, {
-                    restitution: 0.05,
-                    friction: 0.9,
-                    frictionStatic: 1.5,
-                    density: 0.003,
-                    isStatic: false
-                });
-                M.Body.setVelocity(body, { x: 0, y: SPAWN_INITIAL_VELOCITY_Y });
-                const id = nextId++;
-                body.upId = id;
-                imageBody = body;
-                M.Composite.add(engine.world, body);
-                data.set(id, { kind: 'image', palette: 0, size: side });
-                return id;
-            }
-
             // Matter.js engine ticks at fixed delta (16.667ms by default for setInterval-driven
             // pages); we feed it our actual frame delta so motion is correct.
             function tick(dtMs) {
@@ -309,8 +255,7 @@ final class MatterJSWorld {
             // before they actually settle.
             function towerTop() {
                 let minY = floorY;
-                const all = imageBody ? dynamicBodies.concat([imageBody]) : dynamicBodies;
-                for (const b of all) {
+                for (const b of dynamicBodies) {
                     if (!landed.has(b.upId)) continue;
                     if (b.bounds.min.y < minY) minY = b.bounds.min.y;
                 }
@@ -326,8 +271,7 @@ final class MatterJSWorld {
             // Render snapshot: positions in our scene's Y-up space (floor at y=0).
             function snapshot() {
                 const out = [];
-                const all = imageBody ? dynamicBodies.concat([imageBody]) : dynamicBodies;
-                for (const b of all) {
+                for (const b of dynamicBodies) {
                     const info = data.get(b.upId);
                     if (!info) continue;
                     out.push({
@@ -359,8 +303,6 @@ final class MatterJSWorld {
                 snapshot,
                 towerTop,
                 removeBody,
-                allLanded,
-                dropImage,
                 shapeCount: () => dynamicBodies.length
             };
         })();

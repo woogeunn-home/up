@@ -38,33 +38,25 @@ struct CompletionAnimationView: View {
 
     @ViewBuilder
     private func bodyView(for state: MatterJSWorld.BodyState) -> some View {
-        if state.kind == "image" {
-            // The completion image: `size` is the full square side length.
-            Image("CompletionDrop")
-                .resizable()
-                .frame(width: CGFloat(state.size), height: CGFloat(state.size))
-                .rotationEffect(.radians(state.angle))
-        } else {
-            circleBody(for: state)
-        }
+        circleBody(for: state)
     }
 
     @ViewBuilder
     private func circleBody(for state: MatterJSWorld.BodyState) -> some View {
         let diameter = CGFloat(state.size) * 2  // size is radius for circles
-        let shape = anyShape(for: state.kind)
         // Uniform fill keyed off appearance: black shapes in dark mode,
-        // white shapes in light mode. Icon takes the contrasting color.
+        // white shapes in light mode.
         let fill: Color = colorScheme == .dark ? .black : .white
-        let icon: Color = colorScheme == .dark ? .white : .black
 
         ZStack {
-            shape
+            Circle()
                 .fill(fill)
                 .frame(width: diameter, height: diameter)
-            UpArrowGlyph()
-                .fill(icon)
-                .frame(width: 22, height: 22)
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: diameter * 0.72, height: diameter * 0.72)
+                .clipShape(Circle())
         }
         .rotationEffect(.radians(state.angle))
         .onTapGesture {
@@ -72,65 +64,6 @@ struct CompletionAnimationView: View {
         }
     }
 
-    private func anyShape(for kind: String) -> AnyShape {
-        switch kind {
-        case "circle":    return AnyShape(Circle())
-        case "rect":      return AnyShape(Rectangle())
-        case "rounded":   return AnyShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        case "triangle":  return AnyShape(RegularPolygon(sides: 3))
-        case "pentagon":  return AnyShape(RegularPolygon(sides: 5))
-        case "hexagon":   return AnyShape(RegularPolygon(sides: 6))
-        default:          return AnyShape(Circle())
-        }
-    }
-
-}
-
-// MARK: - Polygon shape
-
-private struct RegularPolygon: Shape {
-    let sides: Int
-
-    func path(in rect: CGRect) -> Path {
-        let radius = min(rect.width, rect.height) / 2
-        let center = CGPoint(x: rect.midX, y: rect.midY)
-        var path = Path()
-        for i in 0..<sides {
-            let angle = CGFloat(i) / CGFloat(sides) * 2 * .pi - .pi / 2
-            let point = CGPoint(x: center.x + radius * cos(angle),
-                                y: center.y + radius * sin(angle))
-            if i == 0 { path.move(to: point) } else { path.addLine(to: point) }
-        }
-        path.closeSubpath()
-        return path
-    }
-}
-
-// MARK: - Up arrow glyph as a SwiftUI Shape
-
-private struct UpArrowGlyph: Shape {
-    func path(in rect: CGRect) -> Path {
-        // The CGPath is in Y-up SpriteKit-style coords centered on a 10×12 viewBox.
-        // SwiftUI's coordinate space is Y-down, so we flip vertically while we
-        // scale-and-translate the path to fit `rect`.
-        let viewBoxW: CGFloat = UpArrowPath.viewBoxWidth
-        let viewBoxH: CGFloat = UpArrowPath.viewBoxHeight
-        let scale = Swift.min(rect.width / viewBoxW, rect.height / viewBoxH)
-        let dx = (rect.width - viewBoxW * scale) / 2
-        let dy = (rect.height - viewBoxH * scale) / 2
-
-        var t = CGAffineTransform(translationX: dx, y: dy + viewBoxH * scale)
-            .scaledBy(x: scale, y: -scale)
-
-        var combined = Path()
-        if let chevron = UpArrowPath.chevronPath.copy(using: &t) {
-            combined.addPath(Path(chevron))
-        }
-        if let stem = UpArrowPath.stemPath.copy(using: &t) {
-            combined.addPath(Path(stem))
-        }
-        return combined
-    }
 }
 
 // MARK: - Animation holder
@@ -143,12 +76,8 @@ final class AnimationHolder: ObservableObject {
     static let minBoxHeight: CGFloat = 80
     /// Duration of the in-place pop scale-out animation.
     static let popDuration: TimeInterval = 0.09
-    /// Square side length of the completion image body, in points.
-    static let imageSide: CGFloat = 200
 
     private let world = MatterJSWorld()
-    /// Guards the one-shot image drop so it fires exactly once.
-    private var imageDropped = false
     @Published var shapes: [MatterJSWorld.BodyState] = []
     @Published var boxHeight: CGFloat = AnimationHolder.minBoxHeight
 
@@ -186,13 +115,6 @@ final class AnimationHolder: ObservableObject {
             if id > 0 {
                 NSSound(named: "Tink")?.play()
             }
-        }
-
-        // Once the full stack has settled, drop the completion image once.
-        if !imageDropped && world.allShapesLanded {
-            world.dropImage(boxHeight: world.currentBoxHeight, side: Double(Self.imageSide))
-            imageDropped = true
-            NSSound(named: "Glass")?.play()
         }
 
         world.step(dt: dt)
