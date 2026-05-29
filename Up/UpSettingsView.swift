@@ -2,10 +2,12 @@ import AppKit
 import Darwin
 import ServiceManagement
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct UpSettingsView: View {
     @EnvironmentObject private var monitor: ActivityMonitor
     @Environment(\.dismiss) private var dismiss
+    var onPinPopover: ((Bool) -> Void)?
     var onBack: (() -> Void)?
     @State private var selectedMinutes = 60.0
     @State private var minuteInput = "60"
@@ -71,6 +73,41 @@ struct UpSettingsView: View {
                 } onDecrement: {
                     selectedResetMinutes = max(selectedResetMinutes - 1, 1)
                     applySelectedResetMinutes()
+                }
+                .controlSize(.small)
+            }
+
+            HStack(spacing: 12) {
+                Text("도형 이미지")
+                Spacer()
+
+                if let image = monitor.customShapeImage {
+                    Button {
+                        monitor.customShapeImage = nil
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("기본 이미지로 되돌리기")
+
+                    Image(nsImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 28, height: 28)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(Color.secondary.opacity(0.3), lineWidth: 0.5))
+                } else {
+                    Image("ShapeIcon")
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 28, height: 28)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(Color.secondary.opacity(0.3), lineWidth: 0.5))
+                }
+
+                Button("변경") {
+                    pickShapeImage()
                 }
                 .controlSize(.small)
             }
@@ -175,6 +212,22 @@ struct UpSettingsView: View {
 
             Text("분")
                 .foregroundStyle(.secondary)
+        }
+    }
+
+    private func pickShapeImage() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.png, .jpeg, .heic, .tiff, .gif]
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        onPinPopover?(true)
+        let response = panel.runModal()
+        onPinPopover?(false)
+        guard response == .OK, let url = panel.url else { return }
+        if url.startAccessingSecurityScopedResource() {
+            defer { url.stopAccessingSecurityScopedResource() }
+            monitor.customShapeImage = NSImage(contentsOf: url)
         }
     }
 

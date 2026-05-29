@@ -6,6 +6,7 @@ import SwiftUI
 /// SwiftUI shape views so we can apply Liquid Glass material to them.
 struct CompletionAnimationView: View {
     @StateObject private var holder = AnimationHolder()
+    @EnvironmentObject private var monitor: ActivityMonitor
 
     var body: some View {
         Group {
@@ -44,11 +45,19 @@ struct CompletionAnimationView: View {
     private func circleBody(for state: MatterJSWorld.BodyState) -> some View {
         let diameter = CGFloat(state.size) * 2  // size is radius for circles
 
-        Image("ShapeIcon")
-            .resizable()
-            .aspectRatio(contentMode: .fill)
-            .frame(width: diameter, height: diameter)
-            .clipShape(Circle())
+        Group {
+            if let custom = monitor.customShapeImage {
+                Image(nsImage: custom)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } else {
+                Image("ShapeIcon")
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            }
+        }
+        .frame(width: diameter, height: diameter)
+        .clipShape(Circle())
         .rotationEffect(.radians(state.angle))
         .onTapGesture {
             holder.pop(id: state.id)
@@ -80,6 +89,8 @@ final class AnimationHolder: ObservableObject {
     private var timer: Timer?
     private var lastTime: TimeInterval = 0
     private var nextSpawnTime: TimeInterval = 0
+    private var lastAutoPopTime: TimeInterval = 0
+    private var heightFrozen = false
 
     init() {
         timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
@@ -108,6 +119,13 @@ final class AnimationHolder: ObservableObject {
             }
         }
 
+        if world.shapeCount >= 50, now - lastAutoPopTime >= 1.0 {
+            if let target = world.snapshot().randomElement() {
+                lastAutoPopTime = now
+                pop(id: target.id)
+            }
+        }
+
         world.step(dt: dt)
 
         let snapshot = world.snapshot()
@@ -126,7 +144,13 @@ final class AnimationHolder: ObservableObject {
         }
 
         shapes = combined
-        boxHeight = CGFloat(world.updateBoxHeight())
+        if !heightFrozen {
+            if world.shapeCount >= 50 {
+                heightFrozen = true
+            } else {
+                boxHeight = CGFloat(world.updateBoxHeight())
+            }
+        }
     }
 
     func pop(id: Int) {

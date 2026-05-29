@@ -7,6 +7,7 @@ struct MenuBarContent: View {
     private let contentWidth: CGFloat = Self.contentWidth
     private let contentPadding: CGFloat = 16
     var onClose: (() -> Void)?
+    var onPinPopover: ((Bool) -> Void)?
 
     @EnvironmentObject private var monitor: ActivityMonitor
     @State private var showsSettings = false
@@ -14,7 +15,7 @@ struct MenuBarContent: View {
     var body: some View {
         Group {
             if showsSettings {
-                UpSettingsView {
+                UpSettingsView(onPinPopover: onPinPopover) {
                     showsSettings = false
                 }
                 .environmentObject(monitor)

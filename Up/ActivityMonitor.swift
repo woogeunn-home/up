@@ -12,6 +12,19 @@ final class ActivityMonitor: ObservableObject {
     var onStandUpAlert: (() -> Void)?
     var onSessionReset: (() -> Void)?
 
+    @Published var customShapeImage: NSImage? {
+        didSet {
+            guard let image = customShapeImage,
+                  let tiffData = image.tiffRepresentation,
+                  let bitmapRep = NSBitmapImageRep(data: tiffData),
+                  let pngData = bitmapRep.representation(using: .png, properties: [:]) else {
+                UserDefaults.standard.removeObject(forKey: "customShapeImageData")
+                return
+            }
+            UserDefaults.standard.set(pngData, forKey: "customShapeImageData")
+        }
+    }
+
     @Published var targetSeconds: TimeInterval {
         didSet {
             let clampedTargetSeconds = max(Self.minimumTargetSeconds, targetSeconds)
@@ -53,6 +66,9 @@ final class ActivityMonitor: ObservableObject {
         targetSeconds = savedTarget > 0 ? max(savedTarget, Self.minimumTargetSeconds) : Self.defaultTargetSeconds
         let savedReset = UserDefaults.standard.double(forKey: "inactivityResetSeconds")
         inactivityResetSeconds = savedReset > 0 ? max(savedReset, 60) : Self.defaultInactivityResetSeconds
+        if let data = UserDefaults.standard.data(forKey: "customShapeImageData") {
+            customShapeImage = NSImage(data: data)
+        }
         startTimer()
     }
 

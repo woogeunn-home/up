@@ -35,6 +35,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             }
             .store(in: &cancellables)
 
+
         blinkTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.blinkPhase.toggle()
@@ -47,9 +48,12 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
 
     private func makeHostingController() -> NSHostingController<some View> {
         let controller = NSHostingController(
-            rootView: MenuBarContent { [weak self] in
-                self?.closePopover()
-            }
+            rootView: MenuBarContent(
+                onClose: { [weak self] in self?.closePopover() },
+                onPinPopover: { [weak self] pin in
+                    self?.popover.behavior = pin ? .applicationDefined : .transient
+                }
+            )
             .environmentObject(monitor)
         )
         controller.sizingOptions = .preferredContentSize
