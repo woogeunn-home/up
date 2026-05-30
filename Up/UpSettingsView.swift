@@ -6,6 +6,7 @@ import UniformTypeIdentifiers
 
 struct UpSettingsView: View {
     @EnvironmentObject private var monitor: ActivityMonitor
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
     var onPinPopover: ((Bool) -> Void)?
     var onBack: (() -> Void)?
@@ -100,10 +101,11 @@ struct UpSettingsView: View {
                 } else {
                     ZStack {
                         Circle()
+                            .fill(colorScheme == .dark ? Color.black : Color.white)
                             .frame(width: 28, height: 28)
                         Image(systemName: "arrow.up")
                             .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(.background)
+                            .foregroundStyle(colorScheme == .dark ? Color.white : Color.black)
                     }
                     .overlay(Circle().stroke(Color.secondary.opacity(0.3), lineWidth: 0.5))
                 }
