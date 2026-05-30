@@ -135,24 +135,25 @@ final class AnimationHolder: ObservableObject {
         let dt = Swift.min(now - lastTime, 1.0 / 30.0)
         lastTime = now
 
-        // 높이 프리즈 체크: pop 전에 먼저 확인해야 50→49 감소 이후에도 유지됨
-        if !heightFrozen && world.shapeCount >= 50 {
-            heightFrozen = true
-        }
-
-        if now >= nextSpawnTime {
-            nextSpawnTime = now + 1.6
-            let id = world.spawn(boxHeight: world.currentBoxHeight)
-            if id > 0 {
-                NSSound(named: "Tink")?.play()
+        if !heightFrozen {
+            // ── 채우기 단계: 50개가 될 때까지 1.6초마다 스폰 ──
+            if now >= nextSpawnTime {
+                nextSpawnTime = now + 1.6
+                let id = world.spawn(boxHeight: world.currentBoxHeight)
+                if id > 0 { NSSound(named: "Tink")?.play() }
             }
-        }
-
-        // 50개 도달 이후 1초마다 랜덤 도형 자동 팝
-        if heightFrozen, now - lastAutoPopTime >= 1.0 {
-            if let target = world.snapshot().randomElement() {
+            // 50개 도달 → 높이 고정, 1초 후부터 auto-pop 시작
+            if world.shapeCount >= 50 {
+                heightFrozen = true
                 lastAutoPopTime = now
-                pop(id: target.id)
+            }
+        } else {
+            // ── 완성 단계: 일반 spawn 완전 중단, 1초마다 pop 1개 + spawn 1개 ──
+            if now - lastAutoPopTime >= 1.0, let target = world.snapshot().randomElement() {
+                lastAutoPopTime = now
+                pop(id: target.id)                                     // 제거 → count 49
+                let id = world.spawn(boxHeight: world.currentBoxHeight) // 보충 → count 50
+                if id > 0 { NSSound(named: "Tink")?.play() }
             }
         }
 
