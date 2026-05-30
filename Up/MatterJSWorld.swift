@@ -144,7 +144,7 @@ final class MatterJSWorld {
             M.Composite.add(engine.world, [ground, leftWall, rightWall]);
 
             // Circle radius range — diameter 40..80, so radius 20..40.
-            const CIRCLE_MIN_RADIUS = 20;
+            const CIRCLE_MIN_RADIUS = 5;
             const CIRCLE_MAX_RADIUS = 40;
 
             const MAX_COUNT = 50;
