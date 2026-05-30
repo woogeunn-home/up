@@ -26,20 +26,14 @@ struct CompletionAnimationView: View {
     private var contentZStack: some View {
         ZStack(alignment: .bottomLeading) {
             ForEach(holder.shapes, id: \.id) { state in
-                bodyView(for: state)
+                circleBody(for: state)
                     .scaleEffect(holder.popScale(for: state.id))
                     .position(
                         x: CGFloat(state.x),
-                        // Convert Y-up scene coord → SwiftUI top-down coord.
                         y: holder.boxHeight - CGFloat(state.y)
                     )
             }
         }
-    }
-
-    @ViewBuilder
-    private func bodyView(for state: MatterJSWorld.BodyState) -> some View {
-        circleBody(for: state)
     }
 
     @ViewBuilder

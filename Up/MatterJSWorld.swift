@@ -8,9 +8,7 @@ import JavaScriptCore
 final class MatterJSWorld {
     struct BodyState {
         let id: Int
-        let kind: String          // circle (others removed)
-        let palette: Int          // index into ShapePalette.colors
-        let size: Double          // shape-specific dimension (radius for circle)
+        let size: Double          // radius
         let x: Double
         let y: Double
         let angle: Double
@@ -22,7 +20,6 @@ final class MatterJSWorld {
     private(set) var currentBoxHeight: Double
 
     private let context: JSContext
-    private var lastTime: TimeInterval = 0
 
     init(boxWidth: Double = 280, minBoxHeight: Double = 80, topPadding: Double = 16) {
         self.boxWidth = boxWidth
@@ -53,7 +50,7 @@ final class MatterJSWorld {
         }
         ctx.evaluateScript(source)
 
-        ctx.evaluateScript(Self.bootstrapScript(boxWidth: boxWidth, minBoxHeight: minBoxHeight))
+        ctx.evaluateScript(Self.bootstrapScript(boxWidth: boxWidth))
     }
 
     private static func installPerformanceShim(into ctx: JSContext) {
@@ -98,15 +95,12 @@ final class MatterJSWorld {
         guard let value = context.evaluateScript("UpScene.snapshot()"),
               let array = value.toArray() as? [[String: Any]] else { return [] }
         return array.compactMap { dict in
-            guard let id = dict["id"] as? Int,
-                  let kind = dict["kind"] as? String,
-                  let palette = dict["palette"] as? Int,
-                  let size = dict["size"] as? Double,
-                  let x = dict["x"] as? Double,
-                  let y = dict["y"] as? Double,
+            guard let id   = dict["id"]    as? Int,
+                  let size = dict["size"]  as? Double,
+                  let x    = dict["x"]     as? Double,
+                  let y    = dict["y"]     as? Double,
                   let angle = dict["angle"] as? Double else { return nil }
-            return BodyState(id: id, kind: kind, palette: palette, size: size,
-                             x: x, y: y, angle: angle)
+            return BodyState(id: id, size: size, x: x, y: y, angle: angle)
         }
     }
 
@@ -124,10 +118,7 @@ final class MatterJSWorld {
 
     // MARK: - Bootstrap JS
 
-    private static func bootstrapScript(boxWidth: Double, minBoxHeight: Double) -> String {
-        // The JS side mirrors the demo exactly: same gravity/iterations, walls,
-        // shape sizes scaled to our box width, grow-from-floor mechanic, etc.
-        // We do NOT do any rendering in JS — Swift renders via SKShapeNodes.
+    private static func bootstrapScript(boxWidth: Double) -> String {
         return """
         (function(){
             const M = Matter;
@@ -156,9 +147,6 @@ final class MatterJSWorld {
             const CIRCLE_MIN_RADIUS = 20;
             const CIRCLE_MAX_RADIUS = 40;
 
-            const PALETTE_COUNT = 2;
-            // Sequential palette index — alternates 0, 1, 0, 1, ...
-            let nextPaletteIdx = 0;
             const MAX_COUNT = 50;
             // Distance above the popover's visible top edge at which new shapes
             // appear. They drop into view under gravity.
@@ -169,7 +157,6 @@ final class MatterJSWorld {
             const SPAWN_INITIAL_VELOCITY_Y = 6;
 
             let dynamicBodies = [];
-            let shapeCount = 0;
             let nextId = 1;
             // Per-body bookkeeping (kind, palette index, size).
             const data = new Map();
@@ -197,13 +184,8 @@ final class MatterJSWorld {
             });
 
             function spawn(boxHeight) {
-                // Spawn until the on-screen count reaches MAX_COUNT. When a shape
-                // is popped (removeBody), the next timed tick refills the slot.
                 if (dynamicBodies.length >= MAX_COUNT) return -1;
-                const paletteIdx = nextPaletteIdx;
-                nextPaletteIdx = (nextPaletteIdx + 1) % PALETTE_COUNT;
 
-                // Random circle radius within configured range.
                 const radius = CIRCLE_MIN_RADIUS
                     + Math.random() * (CIRCLE_MAX_RADIUS - CIRCLE_MIN_RADIUS);
 
@@ -233,14 +215,7 @@ final class MatterJSWorld {
                 body.upId = id;
                 M.Composite.add(engine.world, body);
                 dynamicBodies.push(body);
-                shapeCount++;
-
-                data.set(id, {
-                    kind: 'circle',
-                    palette: paletteIdx,
-                    size: radius
-                });
-
+                data.set(id, { size: radius });
                 return id;
             }
 
@@ -277,12 +252,10 @@ final class MatterJSWorld {
                     if (!info) continue;
                     out.push({
                         id: b.upId,
-                        kind: info.kind,
-                        palette: info.palette,
                         size: info.size,
                         x: b.position.x,
-                        y: floorY - b.position.y + FLOOR_OFFSET,  // Y-down → Y-up, lifted
-                        angle: -b.angle                           // Y flip → flip rotation sign
+                        y: floorY - b.position.y + FLOOR_OFFSET,
+                        angle: -b.angle
                     });
                 }
                 return out;
