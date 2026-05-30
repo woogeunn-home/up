@@ -49,13 +49,13 @@ struct MenuBarContent: View {
             } label: {
                 Text("알겠어, 일어날게!")
                     .font(.body.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.solidButtonForeground)
                     .frame(maxWidth: .infinity)
                     .frame(height: 40)
+                    .background(.solidButtonBackground, in: Capsule())
                     .contentShape(Capsule())
             }
             .buttonStyle(.plain)
-            .modifier(GlassCapsule())
             .shadow(color: .black.opacity(0.18), radius: 10, x: 0, y: 4)
             .padding(.horizontal, contentPadding)
             .padding(.bottom, contentPadding)
@@ -118,15 +118,7 @@ struct MenuBarContent: View {
 
 // MARK: - Glass capsule modifier
 
-/// Applies the macOS 26 Liquid Glass material clipped to a Capsule. On older
-/// systems, falls back to a regularMaterial-filled capsule.
-private struct GlassCapsule: ViewModifier {
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if #available(macOS 26.0, *) {
-            content.glassEffect(.clear.interactive(), in: Capsule())
-        } else {
-            content.background(.regularMaterial, in: Capsule())
-        }
-    }
+private extension ShapeStyle where Self == Color {
+    static var solidButtonBackground: Color { Color("SolidButtonBackground") }
+    static var solidButtonForeground: Color { Color("SolidButtonForeground") }
 }
