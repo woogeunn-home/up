@@ -98,12 +98,14 @@ struct UpSettingsView: View {
                         .clipShape(Circle())
                         .overlay(Circle().stroke(Color.secondary.opacity(0.3), lineWidth: 0.5))
                 } else {
-                    Image("ShapeIcon")
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 28, height: 28)
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(Color.secondary.opacity(0.3), lineWidth: 0.5))
+                    ZStack {
+                        Circle()
+                            .frame(width: 28, height: 28)
+                        Image(systemName: "arrow.up")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(.background)
+                    }
+                    .overlay(Circle().stroke(Color.secondary.opacity(0.3), lineWidth: 0.5))
                 }
 
                 Button("변경") {
@@ -222,6 +224,7 @@ struct UpSettingsView: View {
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
         onPinPopover?(true)
+        NSApp.activate(ignoringOtherApps: true)
         let response = panel.runModal()
         onPinPopover?(false)
         guard response == .OK, let url = panel.url else { return }

@@ -7,6 +7,7 @@ import SwiftUI
 struct CompletionAnimationView: View {
     @StateObject private var holder = AnimationHolder()
     @EnvironmentObject private var monitor: ActivityMonitor
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         Group {
@@ -45,25 +46,48 @@ struct CompletionAnimationView: View {
     private func circleBody(for state: MatterJSWorld.BodyState) -> some View {
         let diameter = CGFloat(state.size) * 2  // size is radius for circles
 
-        Group {
+        ZStack {
             if let custom = monitor.customShapeImage {
                 Image(nsImage: custom)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
+                    .frame(width: diameter, height: diameter)
+                    .clipShape(Circle())
             } else {
-                Image("ShapeIcon")
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
+                let fill: Color = colorScheme == .dark ? .black : .white
+                let icon: Color = colorScheme == .dark ? .white : .black
+                Circle()
+                    .fill(fill)
+                    .frame(width: diameter, height: diameter)
+                UpArrowGlyph()
+                    .fill(icon)
+                    .frame(width: 22, height: 22)
             }
         }
-        .frame(width: diameter, height: diameter)
-        .clipShape(Circle())
         .rotationEffect(.radians(state.angle))
         .onTapGesture {
             holder.pop(id: state.id)
         }
     }
 
+}
+
+// MARK: - Up arrow glyph
+
+private struct UpArrowGlyph: Shape {
+    func path(in rect: CGRect) -> Path {
+        let viewBoxW: CGFloat = UpArrowPath.viewBoxWidth
+        let viewBoxH: CGFloat = UpArrowPath.viewBoxHeight
+        let scale = Swift.min(rect.width / viewBoxW, rect.height / viewBoxH)
+        let dx = (rect.width - viewBoxW * scale) / 2
+        let dy = (rect.height - viewBoxH * scale) / 2
+        var t = CGAffineTransform(translationX: dx, y: dy + viewBoxH * scale)
+            .scaledBy(x: scale, y: -scale)
+        var combined = Path()
+        if let chevron = UpArrowPath.chevronPath.copy(using: &t) { combined.addPath(Path(chevron)) }
+        if let stem   = UpArrowPath.stemPath.copy(using: &t)    { combined.addPath(Path(stem)) }
+        return combined
+    }
 }
 
 // MARK: - Animation holder
@@ -111,6 +135,11 @@ final class AnimationHolder: ObservableObject {
         let dt = Swift.min(now - lastTime, 1.0 / 30.0)
         lastTime = now
 
+        // 높이 프리즈 체크: pop 전에 먼저 확인해야 50→49 감소 이후에도 유지됨
+        if !heightFrozen && world.shapeCount >= 50 {
+            heightFrozen = true
+        }
+
         if now >= nextSpawnTime {
             nextSpawnTime = now + 1.6
             let id = world.spawn(boxHeight: world.currentBoxHeight)
@@ -119,7 +148,8 @@ final class AnimationHolder: ObservableObject {
             }
         }
 
-        if world.shapeCount >= 50, now - lastAutoPopTime >= 1.0 {
+        // 50개 도달 이후 1초마다 랜덤 도형 자동 팝
+        if heightFrozen, now - lastAutoPopTime >= 1.0 {
             if let target = world.snapshot().randomElement() {
                 lastAutoPopTime = now
                 pop(id: target.id)
@@ -145,11 +175,7 @@ final class AnimationHolder: ObservableObject {
 
         shapes = combined
         if !heightFrozen {
-            if world.shapeCount >= 50 {
-                heightFrozen = true
-            } else {
-                boxHeight = CGFloat(world.updateBoxHeight())
-            }
+            boxHeight = CGFloat(world.updateBoxHeight())
         }
     }
 
