@@ -148,8 +148,9 @@ final class AnimationHolder: ObservableObject {
                 lastAutoPopTime = now
             }
         } else {
-            // ── 완성 단계: 일반 spawn 완전 중단, 1초마다 pop 1개 + spawn 1개 ──
-            if now - lastAutoPopTime >= 1.0, let target = world.snapshot().randomElement() {
+            // ── 완성 단계: 50개일 때만 1초마다 pop 1개 + spawn 1개 ──
+            if world.shapeCount >= 50, now - lastAutoPopTime >= 1.0,
+               let target = world.snapshot().randomElement() {
                 lastAutoPopTime = now
                 pop(id: target.id)                                     // 제거 → count 49
                 let id = world.spawn(boxHeight: world.currentBoxHeight) // 보충 → count 50

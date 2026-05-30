@@ -240,6 +240,7 @@ final class MatterJSWorld {
                     palette: paletteIdx,
                     size: radius
                 });
+
                 return id;
             }
 
