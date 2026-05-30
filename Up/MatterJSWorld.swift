@@ -189,8 +189,8 @@ final class MatterJSWorld {
                 // Radius grows linearly with fill progress so early shapes are
                 // small and later shapes are large.
                 const progress = dynamicBodies.length / MAX_COUNT;
-                const radius = CIRCLE_MIN_RADIUS
-                    + progress * (CIRCLE_MAX_RADIUS - CIRCLE_MIN_RADIUS);
+                const radius = CIRCLE_MAX_RADIUS
+                    - progress * (CIRCLE_MAX_RADIUS - CIRCLE_MIN_RADIUS);
 
                 const visualW = radius * 2;
                 const margin = visualW / 2 + 12;
