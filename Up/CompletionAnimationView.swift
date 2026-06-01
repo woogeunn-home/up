@@ -25,6 +25,7 @@ struct CompletionAnimationView: View {
         }
         .frame(width: AnimationHolder.boxWidth, height: holder.boxHeight)
         .clipped()
+        .onAppear { holder.onShake = onShake }
     }
 
     private var contentZStack: some View {
@@ -43,7 +44,6 @@ struct CompletionAnimationView: View {
         .contentShape(Rectangle())
         .onTapGesture {
             holder.shake()
-            onShake?()
         }
     }
 
@@ -66,7 +66,7 @@ struct CompletionAnimationView: View {
                     .frame(width: diameter, height: diameter)
                 UpArrowGlyph()
                     .fill(icon)
-                    .frame(width: 22, height: 22)
+                    .frame(width: diameter * 0.275, height: diameter * 0.275)
             }
         }
         .rotationEffect(.radians(state.angle))
@@ -109,6 +109,9 @@ final class AnimationHolder: ObservableObject {
     private let world = MatterJSWorld()
     @Published var shapes: [MatterJSWorld.BodyState] = []
     @Published var boxHeight: CGFloat = AnimationHolder.minBoxHeight
+
+    /// Host-supplied hook to shake the popover window in sync with the slosh.
+    var onShake: (() -> Void)?
 
     /// Bodies that have been popped: their last-known state (frozen position)
     /// and the moment the pop started. The visual lingers for `popDuration`
@@ -185,9 +188,11 @@ final class AnimationHolder: ObservableObject {
         }
     }
 
-    /// Jostle the whole stack so it sloshes upward and resettles.
+    /// The "slosh package": jostle the whole stack upward and shake the popover
+    /// window in sync.
     func shake() {
         world.shake()
+        onShake?()
     }
 
     func pop(id: Int) {
@@ -196,6 +201,8 @@ final class AnimationHolder: ObservableObject {
         }
         world.remove(id: id)
         NSSound(named: "Pop")?.play()
+        // Every disappearance triggers the slosh package.
+        shake()
     }
 
     /// Scale factor for a body during its pop animation. 1.0 for normal bodies;
