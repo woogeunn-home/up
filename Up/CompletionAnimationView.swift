@@ -34,6 +34,12 @@ struct CompletionAnimationView: View {
                     )
             }
         }
+        // Tapping the empty floor of the container (anywhere not on a shape)
+        // jostles the whole stack so it sloshes and resettles.
+        .contentShape(Rectangle())
+        .onTapGesture {
+            holder.shake()
+        }
     }
 
     @ViewBuilder
@@ -172,6 +178,11 @@ final class AnimationHolder: ObservableObject {
         if !heightFrozen {
             boxHeight = CGFloat(world.updateBoxHeight())
         }
+    }
+
+    /// Jostle the whole stack so it sloshes upward and resettles.
+    func shake() {
+        world.shake()
     }
 
     func pop(id: Int) {

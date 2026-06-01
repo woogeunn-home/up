@@ -83,6 +83,12 @@ final class MatterJSWorld {
         Int(context.evaluateScript("UpScene.shapeCount()")?.toInt32() ?? 0)
     }
 
+    /// Give every body an upward impulse so the stack sloshes and resettles,
+    /// like jostling a cup. `strength` is in Matter velocity units (px/step).
+    func shake(strength: Double = 14) {
+        _ = context.evaluateScript("UpScene.shake(\(strength))")
+    }
+
     /// Remove a body from the simulation. Subsequent snapshots will not include it.
     @discardableResult
     func remove(id: Int) -> Bool {
@@ -264,6 +270,17 @@ final class MatterJSWorld {
                 return out;
             }
 
+            // Kick every body upward (with a little lateral jitter) so the
+            // settled stack briefly sloshes and falls back into place.
+            function shake(strength) {
+                for (const b of dynamicBodies) {
+                    M.Body.setVelocity(b, {
+                        x: b.velocity.x + (Math.random() - 0.5) * strength,
+                        y: b.velocity.y - strength
+                    });
+                }
+            }
+
             function removeBody(id) {
                 const body = dynamicBodies.find(b => b.upId === id);
                 if (!body) return false;
@@ -279,6 +296,7 @@ final class MatterJSWorld {
                 tick,
                 snapshot,
                 towerTop,
+                shake,
                 removeBody,
                 shapeCount: () => dynamicBodies.length
             };
