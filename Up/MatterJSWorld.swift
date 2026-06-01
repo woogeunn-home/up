@@ -165,9 +165,9 @@ final class MatterJSWorld {
             // Circle radius range — diameter 40..80, so radius 20..40.
             const CIRCLE_MIN_RADIUS = 5;
             const CIRCLE_MAX_RADIUS = 40;
-            // Easter egg: a single giant shape sized to the popover width
-            // (diameter == containerWidth) so it fills but never exceeds it.
-            const GIANT_RADIUS = containerWidth / 2;
+            // Easter egg: a single giant shape, diameter 240 — fills most of the
+            // popover width while leaving a ~20px margin on each side.
+            const GIANT_RADIUS = (containerWidth - 40) / 2;
             // A shape counts as "small" (one of the last to spawn) below this.
             const SMALL_RADIUS_THRESHOLD = CIRCLE_MIN_RADIUS * 2;
             let giantSpawned = false;
