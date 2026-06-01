@@ -85,7 +85,7 @@ final class MatterJSWorld {
 
     /// Give every body an upward impulse so the stack sloshes and resettles,
     /// like jostling a cup. `strength` is in Matter velocity units (px/step).
-    func shake(strength: Double = 14) {
+    func shake(strength: Double = 4.7) {
         _ = context.evaluateScript("UpScene.shake(\(strength))")
     }
 
