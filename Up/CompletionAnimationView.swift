@@ -5,6 +5,10 @@ import SwiftUI
 /// (Matter.js via JSContext); this view simply draws each tick's snapshot as
 /// SwiftUI shape views so we can apply Liquid Glass material to them.
 struct CompletionAnimationView: View {
+    /// Called when the user taps the empty floor — lets the host shake the
+    /// popover window in sync with the slosh.
+    var onShake: (() -> Void)?
+
     @StateObject private var holder = AnimationHolder()
     @EnvironmentObject private var monitor: ActivityMonitor
     @Environment(\.colorScheme) private var colorScheme
@@ -39,6 +43,7 @@ struct CompletionAnimationView: View {
         .contentShape(Rectangle())
         .onTapGesture {
             holder.shake()
+            onShake?()
         }
     }
 

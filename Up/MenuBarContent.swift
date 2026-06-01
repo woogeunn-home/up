@@ -8,6 +8,7 @@ struct MenuBarContent: View {
     private let contentPadding: CGFloat = 16
     var onClose: (() -> Void)?
     var onPinPopover: ((Bool) -> Void)?
+    var onShake: (() -> Void)?
 
     @EnvironmentObject private var monitor: ActivityMonitor
     @State private var showsSettings = false
@@ -41,7 +42,7 @@ struct MenuBarContent: View {
         // popover's bottom edge, so the bottom-most shapes show through the
         // floating glass button.
         ZStack(alignment: .bottom) {
-            CompletionAnimationView()
+            CompletionAnimationView(onShake: onShake)
 
             Button {
                 monitor.resetAfterCompletion()

@@ -52,7 +52,8 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
                 onClose: { [weak self] in self?.closePopover() },
                 onPinPopover: { [weak self] pin in
                     self?.popover.behavior = pin ? .applicationDefined : .transient
-                }
+                },
+                onShake: { [weak self] in self?.shakePopover() }
             )
             .environmentObject(monitor)
         )
@@ -109,6 +110,22 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
 
         view.layer?.anchorPoint = CGPoint(x: 0.5, y: 0.5)
         view.layer?.add(animation, forKey: "completionPopoverBounce")
+    }
+
+    /// Shake the whole popover window left-right with a quick damped wobble,
+    /// in sync with the in-scene slosh.
+    private func shakePopover() {
+        guard let frameView = popover.contentViewController?.view.window?.contentView else { return }
+        frameView.wantsLayer = true
+
+        let animation = CAKeyframeAnimation(keyPath: "transform.translation.x")
+        animation.values = [0, -5, 4, -3, 2, -1, 0]
+        animation.keyTimes = [0, 0.12, 0.30, 0.50, 0.68, 0.85, 1]
+        animation.duration = 0.4
+        animation.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        animation.isRemovedOnCompletion = true
+
+        frameView.layer?.add(animation, forKey: "popoverShake")
     }
 
     private func togglePopover() {
