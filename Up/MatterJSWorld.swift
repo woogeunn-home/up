@@ -89,6 +89,19 @@ final class MatterJSWorld {
         _ = context.evaluateScript("UpScene.shake(\(strength))")
     }
 
+    /// True once only the smallest shapes remain (the big early shapes have all
+    /// been popped away). Used to time the easter-egg giant drop.
+    var onlySmallRemain: Bool {
+        context.evaluateScript("UpScene.onlySmallRemain()")?.toBool() ?? false
+    }
+
+    /// Easter egg: drop one giant shape (4× the max normal size).
+    @discardableResult
+    func spawnGiant(boxHeight: Double) -> Int {
+        let result = context.evaluateScript("UpScene.spawnGiant(\(boxHeight))")
+        return Int(result?.toInt32() ?? -1)
+    }
+
     /// Remove a body from the simulation. Subsequent snapshots will not include it.
     @discardableResult
     func remove(id: Int) -> Bool {
@@ -152,6 +165,12 @@ final class MatterJSWorld {
             // Circle radius range — diameter 40..80, so radius 20..40.
             const CIRCLE_MIN_RADIUS = 5;
             const CIRCLE_MAX_RADIUS = 40;
+            // Easter egg: a single giant shape sized to the popover width
+            // (diameter == containerWidth) so it fills but never exceeds it.
+            const GIANT_RADIUS = containerWidth / 2;
+            // A shape counts as "small" (one of the last to spawn) below this.
+            const SMALL_RADIUS_THRESHOLD = CIRCLE_MIN_RADIUS * 2;
+            let giantSpawned = false;
 
             const MAX_COUNT = 50;
             // Distance above the popover's visible top edge at which new shapes
@@ -270,6 +289,45 @@ final class MatterJSWorld {
                 return out;
             }
 
+            // Easter egg helpers ----------------------------------------------
+
+            // True once every remaining body is "small" — i.e. all the larger
+            // early shapes have been popped away, which only happens after the
+            // completion popover has been left open a long while.
+            function onlySmallRemain() {
+                if (dynamicBodies.length === 0) return false;
+                for (const b of dynamicBodies) {
+                    const info = data.get(b.upId);
+                    if (info && info.size > SMALL_RADIUS_THRESHOLD) return false;
+                }
+                return true;
+            }
+
+            // Drop a single huge shape from above the popover's top edge.
+            function spawnGiant(boxHeight) {
+                if (giantSpawned) return -1;
+                giantSpawned = true;
+
+                const radius = GIANT_RADIUS;
+                const spawnY = floorY - boxHeight - radius - SPAWN_OFFSET_ABOVE_TOP;
+                const body = M.Bodies.circle(cx, spawnY, radius, {
+                    restitution: 0,
+                    friction: 1,
+                    frictionStatic: 2,
+                    density: 0.004,
+                    isStatic: false
+                });
+                M.Body.setVelocity(body, { x: 0, y: SPAWN_INITIAL_VELOCITY_Y });
+
+                const id = nextId++;
+                body.upId = id;
+                body.isGiant = true;
+                M.Composite.add(engine.world, body);
+                dynamicBodies.push(body);
+                data.set(id, { size: radius });
+                return id;
+            }
+
             // Kick every body upward (with a little lateral jitter) so the
             // settled stack briefly sloshes and falls back into place.
             function shake(strength) {
@@ -284,6 +342,9 @@ final class MatterJSWorld {
             function removeBody(id) {
                 const body = dynamicBodies.find(b => b.upId === id);
                 if (!body) return false;
+                // If the giant is removed, re-arm it so it can drop again once
+                // only small shapes remain.
+                if (body.isGiant) giantSpawned = false;
                 M.Composite.remove(engine.world, body);
                 dynamicBodies = dynamicBodies.filter(b => b.upId !== id);
                 data.delete(id);
@@ -297,6 +358,8 @@ final class MatterJSWorld {
                 snapshot,
                 towerTop,
                 shake,
+                onlySmallRemain,
+                spawnGiant,
                 removeBody,
                 shapeCount: () => dynamicBodies.length
             };

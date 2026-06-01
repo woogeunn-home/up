@@ -123,6 +123,9 @@ final class AnimationHolder: ObservableObject {
     private var nextSpawnTime: TimeInterval = 0
     private var lastAutoPopTime: TimeInterval = 0
     private var heightFrozen = false
+    /// Easter egg: set once the giant shape has dropped, after which the normal
+    /// spawn/auto-pop loop halts and the popover grows to reveal it.
+    private var giantDropped = false
 
     init() {
         timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
@@ -143,7 +146,8 @@ final class AnimationHolder: ObservableObject {
         let dt = Swift.min(now - lastTime, 1.0 / 30.0)
         lastTime = now
 
-        // ── 채우기 단계: 50개가 될 때까지 1.6초마다 스폰 ──
+        // ── 채우기 단계: 50개가 될 때까지 1.6초마다 작은 도형 보충 ──
+        // (거대 도형이 떠 있으면 count >= 50이라 spawn은 자연히 멈춤)
         if now >= nextSpawnTime {
             nextSpawnTime = now + 1.6
             let id = world.spawn(boxHeight: world.currentBoxHeight)
@@ -157,9 +161,18 @@ final class AnimationHolder: ObservableObject {
                 lastAutoPopTime = now
             }
         } else {
-            // ── 완성 단계: 50개일 때만 1초마다 pop 1개 (스폰은 위 루프가 자동 보충) ──
-            if world.shapeCount >= 50, now - lastAutoPopTime >= 1.0,
-               let target = world.snapshot().randomElement() {
+            // ── 완성 단계 ──
+            if world.onlySmallRemain {
+                // 이스터에그: 큰 도형이 전부 빠지고 최소 크기 도형만 남으면
+                // (= 완료 팝오버를 오래 열어두면) 거대 도형을 투하한다. 거대
+                // 도형이 랜덤/탭으로 제거돼 다시 작은 도형만 남으면 재투하된다.
+                if world.spawnGiant(boxHeight: world.currentBoxHeight) > 0 {
+                    giantDropped = true
+                    NSSound(named: "Submarine")?.play()
+                }
+            } else if world.shapeCount >= 50, now - lastAutoPopTime >= 1.0,
+                      let target = world.snapshot().randomElement() {
+                // 1초마다 pop 1개 — 거대 도형도 제거 풀에 포함된다.
                 lastAutoPopTime = now
                 pop(id: target.id)
             }
@@ -183,7 +196,9 @@ final class AnimationHolder: ObservableObject {
         }
 
         shapes = combined
-        if !heightFrozen {
+        // Height grows during the fill phase, and again after the giant drops
+        // so the popover expands to reveal it.
+        if !heightFrozen || giantDropped {
             boxHeight = CGFloat(world.updateBoxHeight())
         }
     }
