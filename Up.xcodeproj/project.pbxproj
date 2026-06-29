@@ -11,11 +11,11 @@
 		100000000000000000000102 /* UpSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000002 /* UpSettingsView.swift */; };
 		100000000000000000000103 /* MenuBarContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000003 /* MenuBarContent.swift */; };
 		100000000000000000000104 /* ActivityMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000004 /* ActivityMonitor.swift */; };
-		10000000000000000000010A /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000111 /* StatusBarController.swift */; };
 		10000000000000000000010C /* UpArrowPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000113 /* UpArrowPath.swift */; };
 		10000000000000000000010F /* CompletionAnimationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000116 /* CompletionAnimationView.swift */; };
 		100000000000000000000110 /* Physics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000117 /* Physics.swift */; };
 		10000000000000000000011A /* MatterJSWorld.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000011B /* MatterJSWorld.swift */; };
+		10000000000000000000011C /* CompletionPanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000011D /* CompletionPanelController.swift */; };
 		100000000000000000000106 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 10000000000000000000000B /* IOKit.framework */; };
 		10000000000000000000010B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000112 /* Assets.xcassets */; };
 		100000000000000000000119 /* matter.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000118 /* matter.min.js */; };
@@ -30,13 +30,13 @@
 		10000000000000000000000B /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
 		10000000000000000000000C /* Up.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Up.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		10000000000000000000000D /* Up.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Up.entitlements; sourceTree = "<group>"; };
-		100000000000000000000111 /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
 		100000000000000000000112 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		100000000000000000000113 /* UpArrowPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpArrowPath.swift; sourceTree = "<group>"; };
 		100000000000000000000116 /* CompletionAnimationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionAnimationView.swift; sourceTree = "<group>"; };
 		100000000000000000000117 /* Physics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Physics.swift; sourceTree = "<group>"; };
 		100000000000000000000118 /* matter.min.js */ = {isa = PBXFileReference; lastKnownFileType = text; path = matter.min.js; sourceTree = "<group>"; };
 		10000000000000000000011B /* MatterJSWorld.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatterJSWorld.swift; sourceTree = "<group>"; };
+		10000000000000000000011D /* CompletionPanelController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionPanelController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,9 +65,9 @@
 				100000000000000000000002 /* UpSettingsView.swift */,
 				100000000000000000000003 /* MenuBarContent.swift */,
 				100000000000000000000004 /* ActivityMonitor.swift */,
-				100000000000000000000111 /* StatusBarController.swift */,
 				100000000000000000000113 /* UpArrowPath.swift */,
 				100000000000000000000116 /* CompletionAnimationView.swift */,
+				10000000000000000000011D /* CompletionPanelController.swift */,
 				100000000000000000000117 /* Physics.swift */,
 				10000000000000000000011B /* MatterJSWorld.swift */,
 				100000000000000000000118 /* matter.min.js */,
@@ -182,9 +182,9 @@
 				100000000000000000000102 /* UpSettingsView.swift in Sources */,
 				100000000000000000000103 /* MenuBarContent.swift in Sources */,
 				100000000000000000000104 /* ActivityMonitor.swift in Sources */,
-				10000000000000000000010A /* StatusBarController.swift in Sources */,
 				10000000000000000000010C /* UpArrowPath.swift in Sources */,
 				10000000000000000000010F /* CompletionAnimationView.swift in Sources */,
+				10000000000000000000011C /* CompletionPanelController.swift in Sources */,
 				100000000000000000000110 /* Physics.swift in Sources */,
 				10000000000000000000011A /* MatterJSWorld.swift in Sources */,
 			);

@@ -11,6 +11,7 @@ struct MenuBarContent: View {
     var onShake: (() -> Void)?
 
     @EnvironmentObject private var monitor: ActivityMonitor
+    @Environment(\.dismiss) private var dismiss
     @State private var showsSettings = false
 
     var body: some View {
@@ -30,7 +31,11 @@ struct MenuBarContent: View {
     @ViewBuilder
     private var mainContent: some View {
         if monitor.hasExceededTarget {
-            completionContent
+            Color.clear
+                .frame(width: 1, height: 1)
+                .onAppear {
+                    dismiss()
+                }
         } else {
             activeContent
         }
@@ -46,7 +51,7 @@ struct MenuBarContent: View {
 
             Button {
                 monitor.resetAfterCompletion()
-                onClose?()
+                close()
             } label: {
                 Text("알겠어, 일어날게!")
                     .font(.body.weight(.semibold))
@@ -115,11 +120,19 @@ struct MenuBarContent: View {
         }
         return String(format: "%02d:%02d", minutes, seconds)
     }
+
+    private func close() {
+        if let onClose {
+            onClose()
+        } else {
+            dismiss()
+        }
+    }
 }
 
 // MARK: - Glass capsule modifier
 
-private extension ShapeStyle where Self == Color {
+extension ShapeStyle where Self == Color {
     static var solidButtonBackground: Color { Color("SolidButtonBackground") }
     static var solidButtonForeground: Color { Color("SolidButtonForeground") }
 }

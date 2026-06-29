@@ -110,6 +110,7 @@ final class ActivityMonitor: ObservableObject {
         isRunning = false
         isPaused = false
         hasAlertedForCurrentSession = false
+        onSessionReset?()
     }
 
     func togglePause() {

@@ -151,7 +151,10 @@ final class AnimationHolder: ObservableObject {
         if now >= nextSpawnTime {
             nextSpawnTime = now + 1.6
             let id = world.spawn(boxHeight: world.currentBoxHeight)
-            if id > 0 { NSSound(named: "Tink")?.play() }
+            if id > 0 {
+                NSSound(named: "Tink")?.play()
+                shake()
+            }
         }
 
         if !heightFrozen {
@@ -169,6 +172,7 @@ final class AnimationHolder: ObservableObject {
                 if world.spawnGiant(boxHeight: world.currentBoxHeight) > 0 {
                     giantDropped = true
                     NSSound(named: "Submarine")?.play()
+                    shake()
                 }
             } else if world.shapeCount >= 50, now - lastAutoPopTime >= 1.0,
                       let target = world.snapshot().randomElement() {
