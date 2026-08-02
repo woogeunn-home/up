@@ -31,41 +31,14 @@ struct MenuBarContent: View {
     @ViewBuilder
     private var mainContent: some View {
         if monitor.hasExceededTarget {
-            Color.clear
-                .frame(width: 1, height: 1)
-                .onAppear {
-                    dismiss()
-                }
+            completionContent
         } else {
             activeContent
         }
     }
 
     private var completionContent: some View {
-        // Animation fills the entire popover; the confirm button floats above
-        // it (overlay) with its own padding. Shapes physically pile up from the
-        // popover's bottom edge, so the bottom-most shapes show through the
-        // floating glass button.
-        ZStack(alignment: .bottom) {
-            CompletionAnimationView(onShake: onShake)
-
-            Button {
-                monitor.resetAfterCompletion()
-                close()
-            } label: {
-                Text("알겠어, 일어날게!")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.solidButtonForeground)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 40)
-                    .background(.solidButtonBackground, in: Capsule())
-                    .contentShape(Capsule())
-            }
-            .buttonStyle(.plain)
-            .shadow(color: .black.opacity(0.18), radius: 10, x: 0, y: 4)
-            .padding(.horizontal, contentPadding)
-            .padding(.bottom, contentPadding)
-        }
+        EmptyView()
     }
 
     private var activeContent: some View {

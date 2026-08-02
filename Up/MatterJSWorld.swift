@@ -20,6 +20,17 @@ final class MatterJSWorld {
     private(set) var currentBoxHeight: Double
 
     private let context: JSContext
+    // Cached UpScene functions — evaluateScript re-parses the source string on
+    // every call, so we resolve JSValues once and invoke them via call().
+    private let fnTick: JSValue
+    private let fnSpawn: JSValue
+    private let fnSpawnGiant: JSValue
+    private let fnSnapshot: JSValue
+    private let fnTowerTop: JSValue
+    private let fnShake: JSValue
+    private let fnRemoveBody: JSValue
+    private let fnShapeCount: JSValue
+    private let fnOnlySmallRemain: JSValue
 
     init(boxWidth: Double = 280, minBoxHeight: Double = 80, topPadding: Double = 16) {
         self.boxWidth = boxWidth
@@ -51,6 +62,19 @@ final class MatterJSWorld {
         ctx.evaluateScript(source)
 
         ctx.evaluateScript(Self.bootstrapScript(boxWidth: boxWidth))
+
+        guard let upScene = ctx.objectForKeyedSubscript("UpScene") else {
+            fatalError("UpScene not defined after bootstrap")
+        }
+        self.fnTick = upScene.objectForKeyedSubscript("tick")
+        self.fnSpawn = upScene.objectForKeyedSubscript("spawn")
+        self.fnSpawnGiant = upScene.objectForKeyedSubscript("spawnGiant")
+        self.fnSnapshot = upScene.objectForKeyedSubscript("snapshot")
+        self.fnTowerTop = upScene.objectForKeyedSubscript("towerTop")
+        self.fnShake = upScene.objectForKeyedSubscript("shake")
+        self.fnRemoveBody = upScene.objectForKeyedSubscript("removeBody")
+        self.fnShapeCount = upScene.objectForKeyedSubscript("shapeCount")
+        self.fnOnlySmallRemain = upScene.objectForKeyedSubscript("onlySmallRemain")
     }
 
     private static func installPerformanceShim(into ctx: JSContext) {
@@ -67,7 +91,7 @@ final class MatterJSWorld {
     func step(dt: TimeInterval) {
         // Matter.js Engine.update takes milliseconds.
         let dtMs = min(dt * 1000.0, 33.0)  // clamp so a hiccup doesn't blow up physics
-        _ = context.evaluateScript("UpScene.tick(\(dtMs))")
+        fnTick.call(withArguments: [dtMs])
     }
 
     /// Spawn a new shape. Returns the JS-side body id (unique per shape).
@@ -75,43 +99,43 @@ final class MatterJSWorld {
     /// spawn just above that, outside the visible area, and fall in.
     @discardableResult
     func spawn(boxHeight: Double) -> Int {
-        let result = context.evaluateScript("UpScene.spawn(\(boxHeight))")
+        let result = fnSpawn.call(withArguments: [boxHeight])
         return Int(result?.toInt32() ?? -1)
     }
 
     var shapeCount: Int {
-        Int(context.evaluateScript("UpScene.shapeCount()")?.toInt32() ?? 0)
+        Int(fnShapeCount.call(withArguments: [])?.toInt32() ?? 0)
     }
 
     /// Give every body an upward impulse so the stack sloshes and resettles,
     /// like jostling a cup. `strength` is in Matter velocity units (px/step).
     func shake(strength: Double = 4.7) {
-        _ = context.evaluateScript("UpScene.shake(\(strength))")
+        fnShake.call(withArguments: [strength])
     }
 
     /// True once only the smallest shapes remain (the big early shapes have all
     /// been popped away). Used to time the easter-egg giant drop.
     var onlySmallRemain: Bool {
-        context.evaluateScript("UpScene.onlySmallRemain()")?.toBool() ?? false
+        fnOnlySmallRemain.call(withArguments: [])?.toBool() ?? false
     }
 
     /// Easter egg: drop one giant shape (4× the max normal size).
     @discardableResult
     func spawnGiant(boxHeight: Double) -> Int {
-        let result = context.evaluateScript("UpScene.spawnGiant(\(boxHeight))")
+        let result = fnSpawnGiant.call(withArguments: [boxHeight])
         return Int(result?.toInt32() ?? -1)
     }
 
     /// Remove a body from the simulation. Subsequent snapshots will not include it.
     @discardableResult
     func remove(id: Int) -> Bool {
-        let result = context.evaluateScript("UpScene.removeBody(\(id))")
+        let result = fnRemoveBody.call(withArguments: [id])
         return result?.toBool() ?? false
     }
 
     /// Snapshot every dynamic body's render-relevant state.
     func snapshot() -> [BodyState] {
-        guard let value = context.evaluateScript("UpScene.snapshot()"),
+        guard let value = fnSnapshot.call(withArguments: []),
               let array = value.toArray() as? [[String: Any]] else { return [] }
         return array.compactMap { dict in
             guard let id   = dict["id"]    as? Int,
@@ -127,7 +151,7 @@ final class MatterJSWorld {
     /// Monotonic: it grows toward the target but never shrinks, which keeps the
     /// popover from quivering when shapes micro-settle.
     func updateBoxHeight() -> Double {
-        let towerTop = context.evaluateScript("UpScene.towerTop()")?.toDouble() ?? 0
+        let towerTop = fnTowerTop.call(withArguments: [])?.toDouble() ?? 0
         let target = Swift.max(minBoxHeight, towerTop + topPadding)
         if target > currentBoxHeight {
             currentBoxHeight += (target - currentBoxHeight) * 0.15

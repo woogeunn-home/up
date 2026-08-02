@@ -26,6 +26,7 @@ struct CompletionAnimationView: View {
         .frame(width: AnimationHolder.boxWidth, height: holder.boxHeight)
         .clipped()
         .onAppear { holder.onShake = onShake }
+        .onDisappear { holder.stop() }
     }
 
     private var contentZStack: some View {
@@ -118,7 +119,7 @@ final class AnimationHolder: ObservableObject {
     /// and shrinks in place via `popScale(for:)`.
     private var poppingStates: [Int: (state: MatterJSWorld.BodyState, startTime: TimeInterval)] = [:]
 
-    private var timer: Timer?
+    private var displayLink: CADisplayLink?
     private var lastTime: TimeInterval = 0
     private var nextSpawnTime: TimeInterval = 0
     private var lastAutoPopTime: TimeInterval = 0
@@ -128,16 +129,30 @@ final class AnimationHolder: ObservableObject {
     private var giantDropped = false
 
     init() {
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.tick() }
-        }
+        // vsync-aligned; also auto-pauses when the associated screen is off.
+        let link = (NSScreen.main ?? NSScreen.screens.first)?
+            .displayLink(target: self, selector: #selector(displayLinkFired))
+        link?.add(to: .main, forMode: .common)
+        displayLink = link
     }
 
     deinit {
-        timer?.invalidate()
+        displayLink?.invalidate()
+    }
+
+    func stop() {
+        displayLink?.invalidate()
+        displayLink = nil
+        onShake = nil
+    }
+
+    @objc private nonisolated func displayLinkFired() {
+        Task { @MainActor in self.tick() }
     }
 
     private func tick() {
+        guard displayLink != nil else { return }
+
         let now = CACurrentMediaTime()
         if lastTime == 0 {
             lastTime = now

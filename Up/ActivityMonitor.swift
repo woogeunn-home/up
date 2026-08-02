@@ -34,6 +34,7 @@ final class ActivityMonitor: ObservableObject {
             }
 
             UserDefaults.standard.set(clampedTargetSeconds, forKey: "targetSeconds")
+            completeCurrentSessionIfNeeded()
         }
     }
 
@@ -110,6 +111,7 @@ final class ActivityMonitor: ObservableObject {
         isRunning = false
         isPaused = false
         hasAlertedForCurrentSession = false
+        stopCompletionSounds()
         onSessionReset?()
     }
 
@@ -143,7 +145,8 @@ final class ActivityMonitor: ObservableObject {
             return
         }
 
-        guard !hasExceededTarget else {
+        if hasExceededTarget {
+            completeCurrentSessionIfNeeded()
             return
         }
 
@@ -152,9 +155,12 @@ final class ActivityMonitor: ObservableObject {
             activeSeconds += 1
         }
 
-        if activeSeconds >= targetSeconds, !hasAlertedForCurrentSession {
-            notifyStandUp()
-        }
+        completeCurrentSessionIfNeeded()
+    }
+
+    private func completeCurrentSessionIfNeeded() {
+        guard hasExceededTarget, !hasAlertedForCurrentSession else { return }
+        notifyStandUp()
     }
 
     private func resetCurrentSessionProgress() {
@@ -170,6 +176,12 @@ final class ActivityMonitor: ObservableObject {
         hasAlertedForCurrentSession = true
         NSSound(named: "Hero")?.play()
         onStandUpAlert?()
+    }
+
+    func stopCompletionSounds() {
+        for name in ["Hero", "Tink", "Submarine", "Pop"] {
+            NSSound(named: name)?.stop()
+        }
     }
 }
 

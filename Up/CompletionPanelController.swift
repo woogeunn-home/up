@@ -21,8 +21,12 @@ final class CompletionPanelController: NSObject {
     }
 
     func close() {
-        panel?.close()
-        panel = nil
+        guard let panel else { return }
+        panel.contentView?.layer?.removeAllAnimations()
+        panel.contentViewController = nil
+        panel.close()
+        self.panel = nil
+        monitor.stopCompletionSounds()
     }
 
     private func makePanel() -> NSPanel {
